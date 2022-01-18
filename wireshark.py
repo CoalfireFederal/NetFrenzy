@@ -15,22 +15,43 @@ class Wireshark:
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
 
+            # Create/merge nodes for the IP addresses
             neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
             neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
-            props = '{'
-            props += f'srcport: {port_src}, '
-            props += f'dstport: {port_dst}, '
-            props += f'protocol: "{proto}", '
-            props += f'time: {time}, '
-            props += f'length: {length}'
-            props += '}'
-            neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
 
+            # Create/merge nodes for the MAC addresses
             neo4j.new_node('MAC', f'{{name: "{mac_src}"}}')
             neo4j.new_node('MAC', f'{{name: "{mac_dst}"}}')
+
+            # Assign the IP addresses to the MAC addresses
             neo4j.new_relationship(ip_src, mac_src, 'ASSIGNED')
             neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
 
+            # Create a connection between IP addresses
+            create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length)
+
+def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length):
+    query = f'''MATCH (n:IP {{name: "{ip_src}"}})
+MATCH (m:IP {{name: "{ip_dst}"}})
+MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+    ON CREATE SET r += {{last_seen: {time}, data_size: {length}, count: 1}}
+    ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
+return r
+'''
+    neo4j.raw_query(query)
+
+'''
+Deprecated, creates too many edges which probably aren't useful anyway
+'''
+def create_port_relationship(neo4j, ip_src, ip_dst, port_src, port_dst, proto, time, length):
+    props = '{'
+    props += f'srcport: {port_src}, '
+    props += f'dstport: {port_dst}, '
+    props += f'protocol: "{proto}", '
+    props += f'time: {time}, '
+    props += f'length: {length}'
+    props += '}'
+    neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
 
 def get_protocol(packet):
     for layer in packet.layers:
