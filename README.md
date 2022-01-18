@@ -7,7 +7,7 @@ python3 main.py ../path/to/your.pcap config.json
 
 View in Neo4j browser console `http://localhost:7474/browser/`
 
-Display all nodes and relationships (slow even with 500 packets)
+Display all nodes and relationships
 
 ```
 MATCH (n) RETURN (n)
