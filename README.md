@@ -33,3 +33,19 @@ This is after cranking up the node and relationship size. You can do so as shown
 ![then here](/screenshots/Screen%20Shot%202022-01-18%20at%204.52.45%20PM.png "Edit size, color")
 
 MAC addresses and some IP addresses will still be...
+
+# Helpful queries
+
+Modify to suit your needs
+
+Find all 80/tcp connections
+
+```
+MATCH (n)-[r:CONNECTED {port: 80, protocol: "tcp"}]->(m) RETURN n,r,m
+```
+
+Find all connections to/from an IP
+
+```
+MATCH (n {name: "192.168.119.151"})-[r:CONNECTED]->(m) RETURN n,r,m
+```
