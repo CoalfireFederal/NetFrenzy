@@ -2,7 +2,7 @@
 Import a pcap file into Neo4j and view the network graph
 
 ```bash
-python3 main.py ../path/to/your.pcap config.json
+python3 main.py -p ../path/to/your.pcap -c config.json -i 00:50:56:e5:33:52
 ```
 
 View in Neo4j browser console `http://localhost:7474/browser/`
