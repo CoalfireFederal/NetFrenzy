@@ -5,6 +5,7 @@ class Wireshark:
     def __init__(self, pcap_filename):
         self.filename = pcap_filename
         self.cap = pyshark.FileCapture(self.filename)
+        self.ignore = []
 
     def upload_to_neo4j(self, neo4j):
         for packet in self.cap:
@@ -24,8 +25,10 @@ class Wireshark:
             neo4j.new_node('MAC', f'{{name: "{mac_dst}"}}')
 
             # Assign the IP addresses to the MAC addresses
-            neo4j.new_relationship(ip_src, mac_src, 'ASSIGNED')
-            neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
+            if mac_src not in self.ignore:
+                neo4j.new_relationship(ip_src, mac_src, 'ASSIGNED')
+            if mac_dst not in self.ignore:
+                neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
 
             # Create a connection between IP addresses
             create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length)
