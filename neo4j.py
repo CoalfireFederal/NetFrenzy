@@ -6,6 +6,7 @@ class Neo4j:
         self.commit = 'http://localhost:7474/db/data/transaction/commit'
         self.auth = None
         self.headers = {'Accept': 'application/json;charset=UTF-8', 'Content-Type': 'application/json'}
+        self.debug = False
 
     def set_connection(self, connection):
         self.connection = connection
@@ -17,18 +18,24 @@ class Neo4j:
         create = 'MATCH (n) DETACH DELETE n'
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
 
     def new_node(self, label, properties):
         create = f'MERGE (n:{label} {properties}) RETURN id(n)'
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
 
     def new_node_dup(self, label, properties):
         create = f'CREATE (n:{label} {properties}) RETURN id(n)'
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
 
     def new_relationship(self, name_a, name_b, reltype, relprops=''):
@@ -40,6 +47,8 @@ MERGE (a)-[r:{reltype} {relprops}]->(b)
 RETURN type(r)'''.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
         
     def new_relationship_id(self, name_a, name_b, reltype, relprops=''):
@@ -51,12 +60,16 @@ MERGE (a)-[r:{reltype} {relprops}]->(b)
 RETURN type(r)'''.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
         
     def increment_node_property(self, name, _property):
         create = f'MATCH (n {{name: "{name}"}}) SET n.{_property} = n.{_property} + 1 RETURN n.{_property}'
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
 
     # Finds a relationship between name_a and name_b with the properties rprop
@@ -65,11 +78,14 @@ RETURN type(r)'''.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         create = f'MATCH (n {{name: "{name_a}"}})-[r {rprop}]->(m {{name: "{name_b}"}}) SET r.{_property} = r.{_property} + 1 RETURN r.{_property}'
         data = {'statements': [{'statement': create}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']
 
     def raw_query(self, query):
         query = query.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         data = {'statements': [{'statement': query}]}
         resp = requests.post(self.commit, json=data, auth=self.auth, headers=self.headers)
-        #import pdb; pdb.set_trace()
+        if self.debug:
+            import pdb; pdb.set_trace()
         return resp.json()['results'][0]['data'][0]['row']

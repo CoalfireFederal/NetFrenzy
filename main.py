@@ -10,6 +10,7 @@ def parse_args():
   parser.add_argument('-c', '--config', type=str, help='Config json file')
   parser.add_argument('-p', '--pcap', type=str, help='Path to pcap file')
   parser.add_argument('-i', '--ignore', type=str, help='MAC address to ignore (like the GW which would correspond to all other IPs)')
+  parser.add_argument('-d', '--debug', action='store_true', help='Use pdb to debug Neo4j responses')
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -24,6 +25,8 @@ def main():
     conn = connection.Connection(config=args.config)
     conn.init_config()
     n4j.set_connection(conn)
+    if args.debug:
+        n4j.debug = True
     if 'ignore' in args:
         ws.ignore.append(args.ignore)
     ws.upload_to_neo4j(n4j)
