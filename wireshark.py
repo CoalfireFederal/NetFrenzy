@@ -3,13 +3,26 @@ import neo4j
 import tqdm
 
 class Wireshark:
-    def __init__(self, pcap_filename):
+    def __init__(self, pcap_filename, keep_packets=False):
         self.filename = pcap_filename
-        self.cap = pyshark.FileCapture(self.filename)
+        self.cap = pyshark.FileCapture(self.filename, keep_packets=keep_packets)
         self.ignore = []
+        self.count = None
+        self.do_count = True
 
     def upload_to_neo4j(self, neo4j):
-        for packet in tqdm.tqdm(self.cap, total=len([c for c in self.cap])):
+        if self.do_count and self.count is None:
+            print('Counting packets in pcap. Takes approx 1ms/packet')
+            self.count = 0
+            for c in self.cap:
+                self.count += 1
+        cap_iter = None
+        if self.do_count or self.count:
+            cap_iter = tqdm.tqdm(self.cap, total=self.count)
+        else:
+            cap_iter = tqdm.tqdm(self.cap)
+
+        for packet in cap_iter:
             proto = get_protocol(packet)
             time = get_time(packet)
             length = get_length(packet)
