@@ -19,7 +19,7 @@ I made this
  - Query bar has a history. Use up/down arrow. Clears upon page reload
  - Pause button halts the graph movement physics
 
-![Preview](/screenshots/Screen%20Shot%202022-01-19%20at%202.54.12%20PM.png, "Neovis.js client")
+![Preview](/screenshots/Screen%20Shot%202022-01-19%20at%202.54.12%20PM.png "Neovis.js client")
 
 ## Using the Neo4j Browser
 
