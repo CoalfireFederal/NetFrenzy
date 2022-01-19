@@ -7,7 +7,7 @@ Import a pcap file into Neo4j and view the network graph
 python3 main.py -p ../path/to/your.pcap -c config.json -i 00:50:56:e5:33:52
 ```
 
-Processes approx. 60 packets per second into Neo4j.
+Processes approx. 40-60 packets per second into Neo4j.
 
 # Example and how to resize
 
