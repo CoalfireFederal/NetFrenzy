@@ -1,5 +1,6 @@
 import pyshark
 import neo4j
+import tqdm
 
 class Wireshark:
     def __init__(self, pcap_filename):
@@ -8,7 +9,7 @@ class Wireshark:
         self.ignore = []
 
     def upload_to_neo4j(self, neo4j):
-        for packet in self.cap:
+        for packet in tqdm.tqdm(self.cap, total=len([c for c in self.cap])):
             proto = get_protocol(packet)
             time = get_time(packet)
             length = get_length(packet)
