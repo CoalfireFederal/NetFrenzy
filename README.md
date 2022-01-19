@@ -7,22 +7,21 @@ Import a pcap file into Neo4j and view the network graph
 python3 main.py -p ../path/to/your.pcap -c config.json -i 00:50:56:e5:33:52
 ```
 
-View in Neo4j browser console `http://localhost:7474/browser/`
-
-Display all nodes and relationships
-
-```
-MATCH (n) RETURN (n)
-```
-
-Narrow down the results yourself `https://neo4j.com/docs/cypher-manual/current/clauses/match/`
-
-Clear out all objects in database (start over)
-```
-MATCH (n) DETACH DELETE n
-```
-
 # Example and how to resize
+
+## Using the custom Neovis.js client
+
+Found at `/web/index.html`, just open it in your browser
+
+I made this
+
+ - Config and Query UI can be hidden with a toggle
+ - Query bar has a history. Use up/down arrow. Clears upon page reload
+ - Pause button halts the graph movement physics
+
+![Preview](/screenshots/Screen%20Shot%202022-01-19%20at%202.54.12%20PM.png, "Neovis.js client")
+
+## Using the Neo4j Browser
 
 ![Preview](/screenshots/Screen%20Shot%202022-01-18%20at%204.51.56%20PM.png "Preview")
 
@@ -48,4 +47,18 @@ Find all connections to/from an IP
 
 ```
 MATCH (n {name: "192.168.119.151"})-[r:CONNECTED]->(m) RETURN n,r,m
+```
+
+Display all nodes and relationships
+
+```
+MATCH (n) RETURN (n)
+```
+
+Narrow down the results yourself `https://neo4j.com/docs/cypher-manual/current/clauses/match/`
+
+Clear out all objects in database (start over)
+
+```
+MATCH (n) DETACH DELETE n
 ```
