@@ -16,6 +16,7 @@ class Wireshark:
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
             oui_src, oui_dst = get_oui(packet)
+            service, service_layer = get_service(packet)
 
             # Create/merge nodes for the IP addresses
             neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
@@ -32,16 +33,22 @@ class Wireshark:
                 neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
 
             # Create a connection between IP addresses
-            create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length)
+            create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
 
-def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length):
+def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
-    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, count: 1}}
+    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
     ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
-return r
-'''
+return r'''
+    neo4j.raw_query(query)
+    query = f'''MATCH (n:IP {{name: "{ip_src}"}})
+MATCH (m:IP {{name: "{ip_dst}"}})
+MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+    SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
+    SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
+return r.service'''
     neo4j.raw_query(query)
 
 '''
@@ -86,5 +93,22 @@ def get_time(packet):
 def get_length(packet):
     return int(packet.captured_length)
 
-def get_out(packet):
-    return packet.eth.src_oui_resolved, packet.eth.dst_oui_resolved
+def get_oui(packet):
+    oui_src = None
+    if 'eth' in packet and 'src_oui_resolved' in packet.eth.field_names:
+        oui_src = packet.eth.src_oui_resolved
+    oui_dst = None
+    if 'eth' in packet and 'dst_oui_resolved' in packet.eth.field_names:
+        oui_dst = packet.eth.dst_oui_resolved
+    return oui_src, oui_dst
+
+def get_service(packet):
+    '''
+    Some services reported by Wireshark/pyshark need to be ignored,
+    like this first example 'data-text-lines' which is a layer lower
+    than HTTP (the HTML itself) but we don't care about that really
+    '''
+    ignore = ('data-text-lines')
+    for l in range(-1, 0 - len(packet.layers), -1):
+        if packet.layers[l].layer_name not in ignore:
+            return packet.layers[l].layer_name, l+len(packet.layers)
