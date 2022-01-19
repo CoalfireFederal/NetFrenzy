@@ -87,7 +87,9 @@ def get_protocol(packet):
             return 'udp'
         elif layer.layer_name == 'tcp':
             return 'tcp'
-    return 'other'
+    if len(packet.layers) >= 3:
+        return packet.layers[2].layer_name
+    return packet.layers[-1].layer_name
 
 def get_macs(packet):
     return packet.layers[0].src, packet.layers[0].dst
