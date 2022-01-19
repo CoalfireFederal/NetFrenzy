@@ -9,6 +9,7 @@ class Wireshark:
         self.ignore = []
         self.count = None
         self.do_count = True
+        self.debug_at = -2
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -22,7 +23,13 @@ class Wireshark:
         else:
             cap_iter = tqdm.tqdm(self.cap)
 
+        debug_count = 0
         for packet in cap_iter:
+            if debug_count == self.debug_at + 1:
+                neo4j.debug = True
+            elif debug_count > 0 and debug_count != self.debug_at:
+                neo4j.debug = False
+
             proto = get_protocol(packet)
             time = get_time(packet)
             length = get_length(packet)
@@ -48,6 +55,8 @@ class Wireshark:
 
             # Create a connection between IP addresses
             create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+
+            debug_count += 1
 
 def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
     if port_dst is None:
