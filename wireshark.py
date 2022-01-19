@@ -40,21 +40,28 @@ class Wireshark:
             service, service_layer = get_service(packet)
 
             # Create/merge nodes for the IP addresses
-            neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
-            neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
+            if ip_src is not None:
+                neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
+            if ip_src is not None:
+                neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
 
             # Create/merge nodes for the MAC addresses
             neo4j.new_node('MAC', f'{{name: "{mac_src}", manufacturer: "{oui_src}"}}')
             neo4j.new_node('MAC', f'{{name: "{mac_dst}", manufacturer: "{oui_dst}"}}')
 
             # Assign the IP addresses to the MAC addresses
-            if mac_src not in self.ignore:
+            if mac_src not in self.ignore and ip_src is not None:
                 neo4j.new_relationship(ip_src, mac_src, 'ASSIGNED')
-            if mac_dst not in self.ignore:
+            if mac_dst not in self.ignore and ip_dst is not None:
                 neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
 
-            # Create a connection between IP addresses
-            create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+            # Create or update the connection relationship for the packet
+            if None not in (ip_src, ip_dst):
+                # Create a connection between IP addresses
+                create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+            else:
+                # Create a connection between MAC addresses
+                create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
 
             debug_count += 1
 
@@ -72,6 +79,22 @@ return r'''
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+    SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
+    SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
+return r.service'''
+    neo4j.raw_query(query)
+
+def create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
+    query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
+MATCH (m:MAC {{name: "{mac_dst}"}})
+MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
+    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
+    ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
+return r'''
+    neo4j.raw_query(query)
+    query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
+MATCH (m:MAC {{name: "{mac_dst}"}})
+MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
     SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
     SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
 return r.service'''
