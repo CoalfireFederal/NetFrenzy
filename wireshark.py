@@ -15,14 +15,15 @@ class Wireshark:
             mac_src, mac_dst = get_macs(packet)
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
+            oui_src, oui_dst = get_oui(packet)
 
             # Create/merge nodes for the IP addresses
             neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
             neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
 
             # Create/merge nodes for the MAC addresses
-            neo4j.new_node('MAC', f'{{name: "{mac_src}"}}')
-            neo4j.new_node('MAC', f'{{name: "{mac_dst}"}}')
+            neo4j.new_node('MAC', f'{{name: "{mac_src}", manufacturer: "{oui_src}"}}')
+            neo4j.new_node('MAC', f'{{name: "{mac_dst}", manufacturer: "{oui_dst}"}}')
 
             # Assign the IP addresses to the MAC addresses
             if mac_src not in self.ignore:
@@ -37,7 +38,7 @@ def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length):
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
-    ON CREATE SET r += {{last_seen: {time}, data_size: {length}, count: 1}}
+    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, count: 1}}
     ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
 return r
 '''
@@ -84,3 +85,6 @@ def get_time(packet):
 
 def get_length(packet):
     return int(packet.captured_length)
+
+def get_out(packet):
+    return packet.eth.src_oui_resolved, packet.eth.dst_oui_resolved
