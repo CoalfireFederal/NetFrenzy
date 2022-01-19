@@ -50,6 +50,9 @@ class Wireshark:
             create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
 
 def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
+    if port_dst is None:
+        port_dst = -1
+
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
