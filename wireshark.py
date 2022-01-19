@@ -157,12 +157,17 @@ def get_oui(packet):
     return oui_src, oui_dst
 
 def get_service(packet):
+    # What could potentially have many other formats in lower layers
+    for service in ('http', 'https', 'ftp'):
+        if service in packet:
+            return service, 999
+
     '''
     Some services reported by Wireshark/pyshark need to be ignored,
     like this first example 'data-text-lines' which is a layer lower
     than HTTP (the HTML itself) but we don't care about that really
     '''
-    ignore = ('data-text-lines')
+    ignore = ('data-text-lines', 'data', 'mime_multipart')
     for l in range(-1, 0 - len(packet.layers), -1):
         if packet.layers[l].layer_name not in ignore:
             return packet.layers[l].layer_name, l+len(packet.layers)
