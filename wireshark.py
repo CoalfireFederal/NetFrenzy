@@ -33,11 +33,12 @@ class Wireshark:
             proto = get_protocol(packet)
             time = get_time(packet)
             length = get_length(packet)
-            mac_src, mac_dst = get_macs(packet)
+            mac_src, mac_dst, mac_tra, mac_rec = get_macs(packet)
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
             oui_src, oui_dst = get_oui(packet)
             service, service_layer = get_service(packet)
+            ssid = get_ssid(packet)
 
             # Create/merge nodes for the IP addresses
             if ip_src is not None:
@@ -46,8 +47,20 @@ class Wireshark:
                 neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
 
             # Create/merge nodes for the MAC addresses
-            neo4j.new_node('MAC', f'{{name: "{mac_src}", manufacturer: "{oui_src}"}}')
-            neo4j.new_node('MAC', f'{{name: "{mac_dst}", manufacturer: "{oui_dst}"}}')
+            if mac_src is not None:
+                man = ''
+                if oui_src is not None:
+                    man = f', manufacturer: "{oui_src}"'
+                neo4j.new_node('MAC', f'{{name: "{mac_src}"{man}}}')
+            if mac_dst is not None:
+                man = ''
+                if oui_src is not None:
+                    man = f', manufacturer: "{oui_dst}"'
+                neo4j.new_node('MAC', f'{{name: "{mac_dst}"{man}}}')
+            if mac_tra is not None:
+                neo4j.new_node('MAC', f'{{name: "{mac_tra}"}}')
+            if mac_rec is not None:
+                neo4j.new_node('MAC', f'{{name: "{mac_rec}"}}')
 
             # Assign the IP addresses to the MAC addresses
             if mac_src not in self.ignore and ip_src is not None:
@@ -59,9 +72,19 @@ class Wireshark:
             if None not in (ip_src, ip_dst):
                 # Create a connection between IP addresses
                 create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
-            else:
+            elif None not in (mac_src, mac_dst):
                 # Create a connection between MAC addresses
                 create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
+            if None not in (mac_src, mac_dst, mac_tra, mac_rec):
+                # Create a connection between MAC addresses
+                # This is for wlan frames that have ra and ta
+                # We are connecting the sender to transmitter, receiver to destination
+                create_connection_mac(neo4j, mac_src, mac_tra, proto, time, length, service, service_layer)
+                create_connection_mac(neo4j, mac_rec, mac_dst, proto, time, length, service, service_layer)
+
+            if ssid is not None:
+                neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
+                neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
 
             debug_count += 1
 
@@ -127,7 +150,35 @@ def get_protocol(packet):
         return packet.layers[1].layer_name
 
 def get_macs(packet):
-    return packet.layers[0].src, packet.layers[0].dst
+    if 'eth' in packet:
+        mac_src = packet.eth.get_field('src')
+        mac_dst = packet.eth.get_field('dst')
+        mac_tra = None
+        mac_rec = None
+    if 'wlan' in packet:
+        mac_src = packet.wlan.get_field('sa')
+        mac_dst = packet.wlan.get_field('da')
+        mac_tra = packet.wlan.get_field('ta')
+        mac_rec = packet.wlan.get_field('ra')
+        if mac_src == mac_tra:
+            mac_tra = None
+        if mac_dst == mac_rec:
+            mac_rec = None
+    ignore = (
+        'ff:ff:ff:ff:ff:ff',
+        '01:00:5e:00:00:fb', # IPv4 Multicast
+        '33:33:00:00:00:fb', # IPv6 Multicast
+    )
+    if mac_src in ignore:
+        mac_src = None
+    if mac_dst in ignore:
+        mac_dst = None
+    if mac_tra in ignore:
+        mac_tra = None
+    if mac_rec in ignore:
+        mac_rec = None
+
+    return mac_src, mac_dst, mac_tra, mac_rec
 
 def get_ips(packet):
     for layer in packet.layers:
@@ -171,3 +222,14 @@ def get_service(packet):
     for l in range(-1, 0 - len(packet.layers), -1):
         if packet.layers[l].layer_name not in ignore:
             return packet.layers[l].layer_name, l+len(packet.layers)
+
+def get_ssid(packet):
+    # This is the Wildcard SSID.
+    # It's noisy and I'm not sure what to make of it
+    ignore = ('SSID: ')
+    ssid = None
+    if 'wlan.mgt' in packet:
+        ssid = packet['wlan.mgt'].get_field('wlan_ssid')
+    if ssid is not None and ssid in ignore:
+        ssid = None
+    return ssid
