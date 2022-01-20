@@ -47,20 +47,10 @@ class Wireshark:
                 neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
 
             # Create/merge nodes for the MAC addresses
-            if mac_src is not None:
-                man = ''
-                if oui_src is not None:
-                    man = f', manufacturer: "{oui_src}"'
-                neo4j.new_node('MAC', f'{{name: "{mac_src}"{man}}}')
-            if mac_dst is not None:
-                man = ''
-                if oui_src is not None:
-                    man = f', manufacturer: "{oui_dst}"'
-                neo4j.new_node('MAC', f'{{name: "{mac_dst}"{man}}}')
-            if mac_tra is not None:
-                neo4j.new_node('MAC', f'{{name: "{mac_tra}"}}')
-            if mac_rec is not None:
-                neo4j.new_node('MAC', f'{{name: "{mac_rec}"}}')
+            create_mac(neo4j, mac_src, oui=oui_src)
+            create_mac(neo4j, mac_dst, oui=oui_dst)
+            create_mac(neo4j, mac_tra)
+            create_mac(neo4j, mac_rec)
 
             # Assign the IP addresses to the MAC addresses
             if mac_src not in self.ignore and ip_src is not None:
@@ -135,6 +125,17 @@ def create_port_relationship(neo4j, ip_src, ip_dst, port_src, port_dst, proto, t
     props += f'length: {length}'
     props += '}'
     neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
+
+def create_mac(neo4j, mac, oui=None):
+    if mac is None:
+        return
+    man = ''
+    if oui not in (None, 'None'):
+        man = f', manufacturer: "{oui}"'
+    multi = ''
+    if int(mac[1], 16) & 0x1 == 0x01:
+        multi = ', multicast: "likely"'
+    neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
 
 def get_protocol(packet):
     for layer in packet.layers:
