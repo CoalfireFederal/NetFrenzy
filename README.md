@@ -59,6 +59,12 @@ MATCH (n) RETURN (n)
 
 Narrow down the results yourself `https://neo4j.com/docs/cypher-manual/current/clauses/match/`
 
+Display all paths which do not involve a multicast address
+```
+MATCH path=(n)-[r]-(m) WHERE NONE(n IN nodes(path) WHERE exists(n.multicast)) RETURN path
+```
+
+
 Clear out all objects in database (start over)
 
 ```
