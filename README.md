@@ -9,6 +9,12 @@ python3 main.py -p ../path/to/your.pcap -c config.json -i 00:50:56:e5:33:52
 
 Processes approx. 40-60 packets per second into Neo4j.
 
+# Why
+
+ - Visualize the network from a PCAP
+ - Verify network segmentation
+ - Identify CTF players attacking each other
+
 # Example and how to resize
 
 ## Using the custom Neovis.js client
