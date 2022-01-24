@@ -70,6 +70,10 @@ Display all paths which do not involve a multicast address
 MATCH path=(n)-[r]-(m) WHERE NONE(n IN nodes(path) WHERE exists(n.multicast)) RETURN path
 ```
 
+Top 10 IPs with most outbound connections
+```
+MATCH (n:IP), (m:IP), (n)-[r:CONNECTED]->(m) WITH n, count(r) AS rel_count ORDER BY rel_count DESC LIMIT 10 MATCH p=(m)<-[r:CONNECTED]-(n) RETURN p
+```
 
 Clear out all objects in database (start over)
 
