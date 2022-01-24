@@ -1,6 +1,9 @@
-import pyshark
-import neo4j
 import tqdm
+
+import pyshark
+
+import neo4j
+import multicast
 
 class Wireshark:
     def __init__(self, pcap_filename, keep_packets=False):
@@ -41,10 +44,8 @@ class Wireshark:
             ssid = get_ssid(packet)
 
             # Create/merge nodes for the IP addresses
-            if ip_src is not None:
-                neo4j.new_node('IP', f'{{name: "{ip_src}"}}')
-            if ip_src is not None:
-                neo4j.new_node('IP', f'{{name: "{ip_dst}"}}')
+            create_ip(neo4j, ip_src)
+            create_ip(neo4j, ip_dst)
 
             # Create/merge nodes for the MAC addresses
             create_mac(neo4j, mac_src, oui=oui_src)
@@ -136,6 +137,15 @@ def create_mac(neo4j, mac, oui=None):
     if int(mac[1], 16) & 0x1 == 0x01:
         multi = ', multicast: "likely"'
     neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
+
+def create_ip(neo4j, ip):
+    if ip is None:
+        return
+    mc = multicast.is_multicast(ip)
+    mcast = ''
+    if mc:
+        mcast = ', multicast: true'
+    neo4j.new_node('IP', f'{{name: "{ip}"{mcast}}}')
 
 def get_protocol(packet):
     for layer in packet.layers:
