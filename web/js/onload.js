@@ -10,11 +10,13 @@ function draw() {
 			"IP": {
 				"caption": "name",
 				"size": "1",
+				"community": "community",
 			"font": {"size": 12}
 			},
 			"MAC": {
 				"caption": "name",
 				"size": "1",
+				"community": "community",
 			"font": {"size": 12, "color": "#0000BB"}
 			},
 			"SSID": {

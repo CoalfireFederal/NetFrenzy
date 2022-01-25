@@ -41,14 +41,20 @@ This is after cranking up the node and relationship size. You can do so as shown
 
 MAC addresses and some IP addresses will still be...
 
+# Creating a community
 
 
 
 ```
+CALL gds.graph.create('myGraph', 'IP', 'CONNECTED',
+    { relationshipProperties: 'count' }
+);
 ```
 
 
 ```
+CALL gds.labelPropagation.write('myGraph', { writeProperty: 'community' })
+YIELD communityCount, ranIterations, didConverge
 ```
 
 
