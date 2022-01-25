@@ -1,253 +1,73 @@
 <!doctype html>
 <html>
-    <head>
-        <title>Wireshark4j Neovis.js</title>
-        <style type="text/css">
-            html, body {
-                font: 16pt arial;
-            }
-    
-            #viz {
-                width: 98vw;
-                height: 97vh;
-                border: 1px solid lightgray;
-                font: 22pt arial;
-            }
-        </style>
-	<style type="text/css">
-		.config-floater {
-			position: absolute;
-			right: 10px;
-			top: 10px;
-			z-index: 2;
-		}
-		.query-floater {
-			position: absolute;
-			left: 10px;
-			top: 10px;
-			z-index: 2;
-		}
-		#configtitle, #queryui {
-			float: right;
-		}
-		#query {
-			width: 50vw;
-		}
-		a {
-			color: inherit;
-			text-decoration: inherit;
-		}
-		#query {
-			font-family: Courier;
-		}
-		input, label {
-			vertical-align: middle;
-		}
-		.config-floater, .query-floater {
-			border: 1px solid lightgray;
-			padding: 2px;
-		}
-	</style>
-	<script src="https://cdn.neo4jlabs.com/neovis.js/v1.5.0/neovis.js"></script>
-	<script type="text/javascript">
+	<head>
 
-        function draw() {
-            window.config = {
-                container_id: "viz",
-                server_url: "bolt://localhost:7687",
-                server_user: "neo4j",
-                server_password: "neo4j",
-		arrows: true,
-                labels: {
-                    "IP": {
-                        "caption": "name",
-                        "size": "1",
-			"font": {"size": 12}
-                    },
-                    "MAC": {
-                        "caption": "name",
-                        "size": "1",
-			"font": {"size": 12, "color": "#0000BB"}
-                    },
-                    "SSID": {
-                        "caption": "name",
-                        "size": "1",
-			"font": {"size": 12, "color": "#BB00BB"}
-                    },
-                    "ASSIGNED": {
-                        "caption": "name",
-                        "size": "0.1",
-                        "title_properties": [
-                            "name",
-                            "pagerank"
-                        ],
-			"font": {"size": 12, "color": "#0000BB"}
-                    }
-                },
-                relationships: {
-                    "CONNECTED": {
-                        "thickness": "data_size",
-                        "caption": "service"
-                    },
-                    "ASSIGNED": {
-                        "thickness": "0.1",
-                        "caption": true,
-                    },
-                    "ADVERTISES": {
-                        "thickness": "0.1",
-                        "caption": true,
-                    }
-                },
-                initial_cypher: "MATCH (n)  RETURN *"
-            };
-
-            window.viz = new NeoVis.default(window.config);
-            window.viz.render();
-	    customStartup();
-        }
-    	</script>
-	<script type="text/javascript">
-	function toggleElem(id) {
-		var elem = document.getElementById(id);
-		if (elem.style.display == "none") {
-			elem.style.display = "block";
-		} else {
-			elem.style.display = "none";
-		}
-	}
-	function toggleConfig() {
-		toggleElem("configinputs");
-	}
-	function toggleQuery() {
-		toggleElem("queryui");
-	}
+		<title>Wireshark4j Neovis.js</title>
 	
-	function applyConfig() {
-		var server = document.getElementById("server").value;
-		var username = document.getElementById("username").value;
-		var password = document.getElementById("password").value;
-		var weight = document.getElementById("weight").value;
-		var caption = document.getElementById("caption").value;
-		window.config.server_url = server;
-		window.config.server_user = username;
-		window.config.server_password = password;
-		switch (weight) {
-			case "none":
-				window.config.relationships["CONNECTED"]["thickness"] = "0.1";
-				break;
-			case "data_size":
-				window.config.relationships["CONNECTED"]["thickness"] = "data_size";
-				break;
-			case "count":
-				window.config.relationships["CONNECTED"]["thickness"] = "count";
-				break;
-		}
-		switch (caption) {
-			case "service":
-				window.config.relationships["CONNECTED"]["caption"] = "service";
-				break;
-			case "name":
-				window.config.relationships["CONNECTED"]["caption"] = "name";
-				break;
-		}
-		if (query_history.length >= 1) {
-			window.config.initial_cypher = query_history[query_history.length - 1];
-		}
-            	window.viz = new NeoVis.default(window.config);
-            	window.viz.render();
-	}
+		<!-- CSS from the example HTML -->
+		<link rel="stylesheet" href="css/viz.css">
+		<!-- CSS for the custom UI -->
+		<link rel="stylesheet" href="css/ui.css">
+	
+		<!-- External Neovis library-->
+		<script src="https://cdn.neo4jlabs.com/neovis.js/v1.5.0/neovis.js"></script>
 
-	function runQuery() {
-		var q = document.getElementById("query").value;
-		if (q === "") { return; }
-		if (query_history[query_history.length - 1] != q) {
-			query_history.push(q);
-			query_history_pos = query_history.length - 1;
-		}
-		window.viz.renderWithCypher(q);
-	}
+		<!-- Initializes config, function called by document.body onload -->
+		<script src="js/onload.js"></script>
+		<!-- UI functionality -->
+		<script src="js/ui.js"></script>
 
-	function customStartup() {
-		var inp1 = document.getElementById("password");
-		inp1.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("submitconfig").click();
-			}
-		});
-		var inp2 = document.getElementById("query");
-		inp2.addEventListener("keyup", function(event) {
-			if (event.keyCode === 13) {
-				event.preventDefault();
-				document.getElementById("runquery").click();
-			}
-		});
+	</head>
 
-		var inp3 = document.getElementById("query");
-		window.query_history = [window.config.initial_cypher];
-		window.query_history_pos = 0;
-		if (inp3.value != "") {
-			window.query_history.push(inp3.value);
-		}
-		inp2.addEventListener("keyup", function(event) {
-			if (event.keyCode === 38) { // Up arrow
-				event.preventDefault();
-				if (query_history_pos == 0 && query_history.length > 0) {
-					query_history_pos = query_history.length - 1;
-				} else if (query_history_pos >= 1) {
-					query_history_pos--;
-				} else {
-					
-				}
-				this.value = query_history[query_history_pos];
-				this.setSelectionRange(this.value.length,this.value.length);
-			}
-			if (event.keyCode === 40) { // Down arrow
-				event.preventDefault();
-				if (query_history_pos == query_history.length - 1) {
-					query_history_pos = 0;
-				} else {
-					query_history_pos++;
-				}
-				this.value = query_history[query_history_pos];
-			}
-		});
-	}
-	</script>
-    </head>
-    <body onload="draw()">
-	<div class="config-floater">
-		<a id="configtitle" onclick="toggleConfig()" href="#">Config</a>
-		<div id="configinputs">
-			</br>
-			<input name="server" value="bolt://localhost:7687" type="text" id="server">
-			<label for="server">Server</label></br>
-			<input name="username" value="neo4j" type="text" id="username">
-			<label for="username">Username</label></br>
-			<input name="password" value="neo4j" type="password" id="password">
-			<label for="password">Password</label></br>
-			<select name="weight" id="weight">
-				<option value="none">None</option>
-				<option value="data_size">Data</option>
-				<option value="count">Count</option>
-			</select>
-			<label for="weight">Weight</label></br>
-			<select name="caption" id="caption">
-				<option value="name">Name</option>
-				<option value="service">Service</option>
-			</select>
-			<label for="caption">Caption</label></br>
-			<input type="submit" id="submitconfig" value="Apply" onclick="applyConfig()">
+	<body onload="draw()">
+
+		<!-- Neo4j config panel -->
+		<div class="config-floater">
+			<a id="configtitle" onclick="toggleConfig()" href="#">Config</a>
+			<div id="configinputs">
+				</br>
+				<!-- Neo4j database connection information -->
+				<input name="server" value="bolt://localhost:7687" type="text" id="server">
+				<label for="server">Server</label></br>
+				<input name="username" value="neo4j" type="text" id="username">
+				<label for="username">Username</label></br>
+				<input name="password" value="neo4j" type="password" id="password">
+				<label for="password">Password</label></br>
+				
+				<!-- What property controls the relationship thiccness -->
+				<select name="weight" id="weight">
+					<option value="none">None</option>
+					<option value="data_size">Data</option>
+					<option value="count">Count</option>
+				</select>
+				<label for="weight">Weight</label></br>
+				
+				<!-- What property to caption CONNECTED relationships -->
+				<select name="caption" id="caption">
+					<option value="name">Name</option>
+					<option value="service">Service</option>
+				</select>
+				<label for="caption">Caption</label>
+
+				</br>
+				<input type="submit" id="submitconfig" value="Apply" onclick="applyConfig()">
+			</div>
 		</div>
-	</div>
-	<div class="query-floater">
-		<a id="querytitle" onclick="toggleQuery()" href="#">Query</a> &nbsp;
-		<div id="queryui">
-			<input name="query" value="" type="text" id="query">
-			<input type="submit" id="runquery" value="Run" onclick="runQuery()">
-			<input type="submit" value="Pause" onclick="window.viz.stabilize()">
+		
+		<!-- Neo4j query input -->
+		<div class="query-floater">
+			<a id="querytitle" onclick="toggleQuery()" href="#">Query</a> &nbsp;
+			<div id="queryui">
+				<input name="query" value="" type="text" id="query">
+				<input type="submit" id="runquery" value="Run" onclick="runQuery()">
+				<input type="submit" value="Pause" onclick="window.viz.stabilize()">
+			</div>
 		</div>
-	</div>
-        <div id="viz"></div>
-    </body>    
+		
+		<!-- Visualization canvas -->
+		<div id="viz"></div>
+	</body>	
 </html>
+
+<!-- vim: ts=2 sts=2
+-->

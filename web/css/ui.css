@@ -1,0 +1,33 @@
+
+.config-floater {
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	z-index: 2;
+}
+.query-floater {
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	z-index: 2;
+}
+#configtitle, #queryui {
+	float: right;
+}
+#query {
+	width: 50vw;
+}
+a {
+	color: inherit;
+	text-decoration: inherit;
+}
+#query {
+	font-family: Courier;
+}
+input, label {
+	vertical-align: middle;
+}
+.config-floater, .query-floater {
+	border: 1px solid lightgray;
+	padding: 2px;
+}
