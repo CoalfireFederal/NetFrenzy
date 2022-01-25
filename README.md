@@ -41,39 +41,18 @@ This is after cranking up the node and relationship size. You can do so as shown
 
 MAC addresses and some IP addresses will still be...
 
+
+
+
+```
+```
+
+
+```
+```
+
+
 # Helpful queries
-
-Modify to suit your needs
-
-Find all 80/tcp connections
-
-```
-MATCH (n)-[r:CONNECTED {port: 80, protocol: "tcp"}]->(m) RETURN n,r,m
-```
-
-Find all connections to/from an IP
-
-```
-MATCH (n {name: "192.168.119.151"})-[r:CONNECTED]->(m) RETURN n,r,m
-```
-
-Display all nodes and relationships
-
-```
-MATCH (n) RETURN (n)
-```
-
-Narrow down the results yourself `https://neo4j.com/docs/cypher-manual/current/clauses/match/`
-
-Display all paths which do not involve a multicast address
-```
-MATCH path=(n)-[r]-(m) WHERE NONE(n IN nodes(path) WHERE exists(n.multicast)) RETURN path
-```
-
-Top 10 IPs with most outbound connections
-```
-MATCH (n:IP), (m:IP), (n)-[r:CONNECTED]->(m) WITH n, count(r) AS rel_count ORDER BY rel_count DESC LIMIT 10 MATCH p=(m)<-[r:CONNECTED]-(n) RETURN p
-```
 
 Clear out all objects in database (start over)
 
