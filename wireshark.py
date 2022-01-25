@@ -233,6 +233,7 @@ def get_service(packet):
     for l in range(-1, 0 - len(packet.layers), -1):
         if packet.layers[l].layer_name not in ignore:
             return packet.layers[l].layer_name, l+len(packet.layers)
+    return "unknown", 0-len(packet.layers)
 
 def get_ssid(packet):
     # This is the Wildcard SSID.
