@@ -46,10 +46,12 @@ function draw() {
 				"caption": true,
 			}
 		},
-		initial_cypher: "MATCH (n)  RETURN *"
+		initial_cypher: "MATCH (n) RETURN *"
 	};
 
 	window.viz = new NeoVis.default(window.config);
 	window.viz.render();
 	customStartup();
 }
+
+// vim: ts=2 sts=2

@@ -17,7 +17,7 @@
 #query {
 	width: 50vw;
 }
-a {
+#configtitle, #querytitle, .hq-item {
 	color: inherit;
 	text-decoration: inherit;
 }
@@ -30,4 +30,10 @@ input, label {
 .config-floater, .query-floater {
 	border: 1px solid lightgray;
 	padding: 2px;
+}
+#queryui div {
+	font-size: 14px;
+}
+#queryhistory, #queryinfo {
+	display: none;
 }

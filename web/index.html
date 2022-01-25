@@ -16,6 +16,8 @@
 		<script src="js/onload.js"></script>
 		<!-- UI functionality -->
 		<script src="js/ui.js"></script>
+		<!-- An object containing helpful Cypher queries -->
+		<script src="js/helpfulqueries.js"></script>
 
 	</head>
 
@@ -59,8 +61,15 @@
 			<a id="querytitle" onclick="toggleQuery()" href="#">Query</a> &nbsp;
 			<div id="queryui">
 				<input name="query" value="" type="text" id="query">
-				<input type="submit" id="runquery" value="Run" onclick="runQuery()">
-				<input type="submit" value="Pause" onclick="window.viz.stabilize()">
+				<input type="submit" id="runquery" value="▶" onclick="runQuery()">
+				<input type="submit" value="⏸" onclick="window.viz.stabilize()">
+				<input type="submit" value="𝒾" onclick="toggleInfo()">
+				<input type="submit" value="𝒽" onclick="toggleHistory()">
+				<div id="queryhistory"><p>History</p><ol id="queryhistoryol"></ol></div>
+				<div id="queryinfo">
+					<p>Neo4j uses the Cypher query language to query the graph database. You can find a Cypher cheat sheet <a href="https://neo4j.com/docs/cypher-refcard/current/">here</a>.</p>
+					<ol id="customqueries"></ol>
+				</div>
 			</div>
 		</div>
 		
