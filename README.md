@@ -21,7 +21,7 @@ If you have multiple PCAPs, you can run this injestor in parallel to get speed b
  - Verify network segmentation
  - Identify CTF players attacking each other
 
-# Example and how to resize
+# Demo
 
 ## Using the custom Neovis.js client
 
@@ -32,20 +32,10 @@ I made this
  - Config and Query UI can be hidden with a toggle
  - Query bar has a history. Use up/down arrow. Clears upon page reload
  - Pause button halts the graph movement physics
+ - i button toggles a list of helpful queries you can click on, modify, and run
+ - h button toggles your history, also clickable
 
-![Preview](/screenshots/Screen%20Shot%202022-01-19%20at%203.02.39%20PM.png "Neovis.js client")
-
-## Using the Neo4j Browser
-
-![Preview](/screenshots/Screen%20Shot%202022-01-18%20at%204.51.56%20PM.png "Preview")
-
-This is after cranking up the node and relationship size. You can do so as shown below:
-
-![Click here](/screenshots/Screen%20Shot%202022-01-18%20at%204.52.05%20PM.png "Node and Edge labels")
-
-![then here](/screenshots/Screen%20Shot%202022-01-18%20at%204.52.45%20PM.png "Edit size, color")
-
-MAC addresses and some IP addresses will still be...
+![Preview](/screenshots/neovis-demo.png "Neovis.js client")
 
 # Using community and pagerank
 
