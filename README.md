@@ -41,22 +41,60 @@ This is after cranking up the node and relationship size. You can do so as shown
 
 MAC addresses and some IP addresses will still be...
 
-# Creating a community
+# Using community and pagerank
 
+Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper `neo4j:adm` ownership.
 
+## Setup
+
+1\. Create the simple connection we will build our community and pagerank around
 
 ```
-CALL gds.graph.create('myGraph', 'IP', 'CONNECTED',
+MATCH (r1)-[:CONNECTED]->(r2)
+WITH r1, r2, COUNT(*) AS count
+MERGE (r2)<-[r:COMMUNICATES]-(r1)
+SET r.count = count
+```
+
+2\. Create the graph
+
+```
+CALL gds.graph.create('networkgraph', ['IP', 'MAC'], 'COMMUNICATES',
     { relationshipProperties: 'count' }
 );
 ```
 
+## Creating a community
+
+3\. Create the `community` property using the [labelPropagation algorithm](https://data-xtractor.com/blog/graphs/neo4j-graph-algorithms-community-detection/#6_Label_Propagation_Algorithm_LPA)
 
 ```
-CALL gds.labelPropagation.write('myGraph', { writeProperty: 'community' })
+CALL gds.labelPropagation.write('networkgraph', { writeProperty: 'community' })
 YIELD communityCount, ranIterations, didConverge
 ```
 
+## Creating pagerank
+
+4\. Create the `pagerank` property using the [pageRank algorithm](https://neo4j.com/docs/graph-data-science/current/algorithms/page-rank/#algorithms-page-rank-examples-write)
+
+```
+CALL gds.pageRank.write(
+  'networkgraph',
+  {
+    writeProperty: 'pagerank'
+  }
+)
+YIELD
+  nodePropertiesWritten,
+  createMillis,
+  ranIterations,
+  configuration AS conf
+RETURN
+  nodePropertiesWritten,
+  createMillis,
+  ranIterations,
+  conf.writeProperty AS writeProperty
+```
 
 # Helpful queries
 

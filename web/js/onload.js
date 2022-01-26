@@ -9,13 +9,13 @@ function draw() {
 		labels: {
 			"IP": {
 				"caption": "name",
-				"size": "1",
+				"size": "pagerank",
 				"community": "community",
 			"font": {"size": 12}
 			},
 			"MAC": {
 				"caption": "name",
-				"size": "1",
+				"size": "pagerank",
 				"community": "community",
 			"font": {"size": 12, "color": "#0000BB"}
 			},
@@ -38,6 +38,10 @@ function draw() {
 			"CONNECTED": {
 				"thickness": "data_size",
 				"caption": "service"
+			},
+			"COMMUNICATES": {
+				"thickness": "0.1",
+				"caption": true,
 			},
 			"ASSIGNED": {
 				"thickness": "0.1",
