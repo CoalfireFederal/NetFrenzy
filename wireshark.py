@@ -134,14 +134,14 @@ def create_mac(neo4j, mac, oui=None):
     if oui not in (None, 'None'):
         man = f', manufacturer: "{oui}"'
     multi = ''
-    if int(mac[1], 16) & 0x1 == 0x01:
+    if multicast.mac_multicast(mac):
         multi = ', multicast: "likely"'
     neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
 
 def create_ip(neo4j, ip):
     if ip is None:
         return
-    mc = multicast.is_multicast(ip)
+    mc = multicast.ip_multicast(ip)
     mcast = ''
     if mc:
         mcast = ', multicast: true'
@@ -175,19 +175,6 @@ def get_macs(packet):
             mac_tra = None
         if mac_dst == mac_rec:
             mac_rec = None
-    ignore = (
-        'ff:ff:ff:ff:ff:ff',
-        '01:00:5e:00:00:fb', # IPv4 Multicast
-        '33:33:00:00:00:fb', # IPv6 Multicast
-    )
-    if mac_src in ignore:
-        mac_src = None
-    if mac_dst in ignore:
-        mac_dst = None
-    if mac_tra in ignore:
-        mac_tra = None
-    if mac_rec in ignore:
-        mac_rec = None
 
     return mac_src, mac_dst, mac_tra, mac_rec
 

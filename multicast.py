@@ -38,11 +38,14 @@ for cidr in multicast_cidrs:
     mask = int(n.netmask)
     multicast_array.append([cidr, netw, mask])
 
-def is_multicast(ip):
+def ip_multicast(ip):
     a = struct.unpack('!I', socket.inet_aton(ip))[0]
     for m in multicast_array:
-        #print(f'{ip}, {m}')
         if (a & m[2]) == m[1]:
-            #print('is_multicast: True')
             return True
+    return False
+
+def mac_multicast(mac):
+    if int(mac[1], 16) & 0x1 == 0x01:
+        return True
     return False
