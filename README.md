@@ -8,10 +8,12 @@ Please submit a pull request rather than committing directly to the repository.
 # Usage
 
 ```bash
-python3 main.py -p ../path/to/your.pcap -c config.json -i 00:50:56:e5:33:52
+python3 main.py -p ../path/to/your.pcap -c ws4j.json -nc
 ```
 
-Processes approx. 40-60 packets per second into Neo4j.
+Processes approx. 30-60 packets per second into Neo4j.
+
+If you have multiple PCAPs, you can run this injestor in parallel to get speed benefits up to the number of CPUs assigned to your VM.
 
 # Why
 
