@@ -27,6 +27,9 @@
 input, label {
 	vertical-align: middle;
 }
+label {
+	font-size: 14px;
+}
 .config-floater, .query-floater {
 	border: 1px solid lightgray;
 	padding: 2px;
