@@ -3,7 +3,7 @@ Import a pcap file into Neo4j and view the network graph
 
 # Contributing
 
-Please submit a pull request rather than committing directly to the repository.
+Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch.
 
 # Usage
 
