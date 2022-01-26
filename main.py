@@ -41,4 +41,7 @@ def main():
     ws.upload_to_neo4j(n4j)
 
 if __name__=='__main__':
-    main()
+    try:
+        main()
+    except KeyboardInterrupt as e:
+        print('Received Ctrl-C. Exiting')
