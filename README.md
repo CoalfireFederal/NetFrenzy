@@ -43,6 +43,8 @@ MAC addresses and some IP addresses will still be...
 
 # Using community and pagerank
 
+This will color nodes based on the clusters they form within the graph. This is most useful when you have a capture from a core network point rather than your local machine. Nodes will also appear larger based on the number of incoming/outgoing connections compared to other nodes.
+
 Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper `neo4j:adm` ownership.
 
 ## Setup
