@@ -42,15 +42,22 @@
 					<option value="data_size">Data</option>
 					<option value="count">Count</option>
 				</select>
-				<label for="weight">Weight</label></br>
+				<label for="weight">CONNECTED Weight</label></br>
 				
 				<!-- What property to caption CONNECTED relationships -->
 				<select name="caption" id="caption">
 					<option value="name">Name</option>
 					<option value="service">Service</option>
 				</select>
-				<label for="caption">Caption</label>
+				<label for="caption">CONNECTED Caption</label></br>
 
+				<!-- What property controls the relationship thiccness -->
+				<select name="commweight" id="commweight">
+					<option value="none">None</option>
+					<option value="count">Count</option>
+				</select>
+				<label for="commweight">COMMUNICATES Weight</label>
+				
 				</br>
 				<input type="submit" id="submitconfig" value="Apply" onclick="applyConfig()">
 			</div>

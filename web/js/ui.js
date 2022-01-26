@@ -26,6 +26,7 @@ function applyConfig() {
 	var password = document.getElementById("password").value;
 	var weight = document.getElementById("weight").value;
 	var caption = document.getElementById("caption").value;
+	var commweight = document.getElementById("commweight").value;
 	window.config.server_url = server;
 	window.config.server_user = username;
 	window.config.server_password = password;
@@ -47,6 +48,14 @@ function applyConfig() {
 			break;
 		case "name":
 			window.config.relationships["CONNECTED"]["caption"] = "name";
+			break;
+	}
+	switch (commweight) {
+		case "none":
+			window.config.relationships["COMMUNICATES"]["thickness"] = "0.1";
+			break;
+		case "count":
+			window.config.relationships["COMMUNICATES"]["thickness"] = "count";
 			break;
 	}
 	
