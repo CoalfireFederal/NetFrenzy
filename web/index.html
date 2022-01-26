@@ -35,6 +35,18 @@
 				<label for="username">Username</label></br>
 				<input name="password" value="neo4j" type="password" id="password">
 				<label for="password">Password</label></br>
+
+				<select name="layout" id="layout">
+					<option value="none">None</option>
+					<option value="hierarchical">Hierarchical</option>
+				</select>
+				<label for="layout">Graph layout</label></br>
+
+				<select name="sort" id="sort" disabled>
+					<option value="hubsize">Hubsize</option>
+					<option value="directed">Directed</option>
+				</select>
+				<label for="sort">Hierarchical sort</label></br>
 				
 				<!-- What property controls the relationship thiccness -->
 				<select name="weight" id="weight">

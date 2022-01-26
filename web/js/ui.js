@@ -24,12 +24,34 @@ function applyConfig() {
 	var server = document.getElementById("server").value;
 	var username = document.getElementById("username").value;
 	var password = document.getElementById("password").value;
+	var layout = document.getElementById("layout").value;
+	var sort = document.getElementById("sort").value;
 	var weight = document.getElementById("weight").value;
 	var caption = document.getElementById("caption").value;
 	var commweight = document.getElementById("commweight").value;
 	window.config.server_url = server;
 	window.config.server_user = username;
 	window.config.server_password = password;
+	
+	switch (layout) {
+		case "none":
+			window.config.hierarchical = false;
+			document.getElementById("sort").disabled = true;
+			break;
+		case "hierarchical":
+			window.config.hierarchical = true;
+			document.getElementById("sort").disabled = false;
+			break;
+	}
+	switch (sort) {
+		case "hubsize":
+			window.config.hierarchical_sort_method = "hubsize";
+			break;
+		case "directed":
+			window.config.hierarchical_sort_method = "directed";
+			break;
+	}
+	
 	switch (weight) {
 		case "none":
 			window.config.relationships["CONNECTED"]["thickness"] = "0.1";
