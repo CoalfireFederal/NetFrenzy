@@ -41,7 +41,7 @@ function draw() {
 			},
 			"COMMUNICATES": {
 				"thickness": "0.1",
-				"caption": true,
+				"caption": false,
 			},
 			"ASSIGNED": {
 				"thickness": "0.1",
