@@ -7,6 +7,11 @@ Please make a new branch to make modifications, then submit a pull request rathe
 
 # Usage
 
+## Setup
+`./setup.sh` will install the Python dependencies and install Neo4j's Graph Data Library
+
+## Run
+
 ```bash
 python3 main.py -p ../path/to/your.pcap -c ws4j.json -nc
 ```
