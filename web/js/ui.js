@@ -157,6 +157,24 @@ function initHelpfulQueries() {
 	}
 }
 
+function createcommunity(i) {
+	var commands = [
+		"MATCH (r1)-[:CONNECTED]->(r2) WITH r1, r2, COUNT(*) AS count MERGE (r2)<-[r:COMMUNICATES]-(r1) SET r.count = count",
+		"CALL gds.graph.create('networkgraph', ['IP', 'MAC'], 'COMMUNICATES', { relationshipProperties: 'count' })",
+		"CALL gds.labelPropagation.write('networkgraph', { writeProperty: 'community' })",
+		"CALL gds.pageRank.write('networkgraph',{writeProperty: 'pagerank'})",
+	]
+	
+	console.log(commands[i]);
+	window.viz.renderWithCypher(commands[i]);
+	
+	if (i < commands.length - 1) {
+		setTimeout(function() {
+			createcommunity(i+1);
+		}, 5000);
+	}
+}
+
 function customStartup() {
 	var inp1 = document.getElementById("password");
 	inp1.addEventListener("keyup", function(event) {
