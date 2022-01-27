@@ -23,6 +23,10 @@ def parse_args():
 def main():
     args = parse_args()
 
+    if not args.pcap:
+        print(f'try --help')
+        return
+
     ws = wireshark.Wireshark(args.pcap)
     n4j = neo4j.Neo4j()
 
