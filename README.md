@@ -8,7 +8,7 @@ Please make a new branch to make modifications, then submit a pull request rathe
 # Usage
 
 ## Setup
-`./setup.sh` will install the Python dependencies and install Neo4j's Graph Data Library
+`./setup.sh` will install the Python dependencies and install Neo4j's Graph Data Science Library
 
 ## Run
 
@@ -46,57 +46,20 @@ I made this
 
 This will color nodes based on the clusters they form within the graph. This is most useful when you have a capture from a core network point rather than your local machine. Nodes will also appear larger based on the number of incoming/outgoing connections compared to other nodes.
 
-Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper `neo4j:adm` ownership.
-
 ## Setup
 
-1\. Create the simple connection we will build our community and pagerank around
+Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper `neo4j:adm` ownership. If you have run `setup.sh`, this has already been done.
+
+## How to generate
+
+Open the Info pane by clicking the `i` button. Click the `Create COMMUNICATES relationship, Community, and PageRank` link. Wait 20 seconds. Now, you should see that nodes have different colors.
+
+## Get rid of the colors
+
+If you don't find the colors useful for your graph screenshots, you can run the command:
 
 ```
-MATCH (r1)-[:CONNECTED]->(r2)
-WITH r1, r2, COUNT(*) AS count
-MERGE (r2)<-[r:COMMUNICATES]-(r1)
-SET r.count = count
-```
-
-2\. Create the graph
-
-```
-CALL gds.graph.create('networkgraph', ['IP', 'MAC'], 'COMMUNICATES',
-    { relationshipProperties: 'count' }
-);
-```
-
-## Creating a community
-
-3\. Create the `community` property using the [labelPropagation algorithm](https://data-xtractor.com/blog/graphs/neo4j-graph-algorithms-community-detection/#6_Label_Propagation_Algorithm_LPA)
-
-```
-CALL gds.labelPropagation.write('networkgraph', { writeProperty: 'community' })
-YIELD communityCount, ranIterations, didConverge
-```
-
-## Creating pagerank
-
-4\. Create the `pagerank` property using the [pageRank algorithm](https://neo4j.com/docs/graph-data-science/current/algorithms/page-rank/#algorithms-page-rank-examples-write)
-
-```
-CALL gds.pageRank.write(
-  'networkgraph',
-  {
-    writeProperty: 'pagerank'
-  }
-)
-YIELD
-  nodePropertiesWritten,
-  createMillis,
-  ranIterations,
-  configuration AS conf
-RETURN
-  nodePropertiesWritten,
-  createMillis,
-  ranIterations,
-  conf.writeProperty AS writeProperty
+MATCH (n) REMOVE n.community REMOVE n.pagerank
 ```
 
 # Helpful queries
