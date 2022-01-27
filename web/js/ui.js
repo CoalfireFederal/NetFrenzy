@@ -62,8 +62,7 @@ function applyConfig() {
 		case "count":
 			window.config.relationships["CONNECTED"]["thickness"] = "count";
 			break;
-	}
-	
+	}	
 	switch (caption) {
 		case "service":
 			window.config.relationships["CONNECTED"]["caption"] = "service";
@@ -72,12 +71,19 @@ function applyConfig() {
 			window.config.relationships["CONNECTED"]["caption"] = "name";
 			break;
 	}
+	
 	switch (commweight) {
 		case "none":
 			window.config.relationships["COMMUNICATES"]["thickness"] = "0.1";
 			break;
-		case "count":
-			window.config.relationships["COMMUNICATES"]["thickness"] = "count";
+		case "total":
+			window.config.relationships["COMMUNICATES"]["thickness"] = "total";
+			break;
+		case "data":
+			window.config.relationships["COMMUNICATES"]["thickness"] = "data";
+			break;
+		case "ports":
+			window.config.relationships["COMMUNICATES"]["thickness"] = "ports";
 			break;
 	}
 	
@@ -159,8 +165,9 @@ function initHelpfulQueries() {
 
 function createcommunity(i) {
 	var commands = [
-		"MATCH (r1)-[:CONNECTED]->(r2) WITH r1, r2, COUNT(*) AS count MERGE (r2)<-[r:COMMUNICATES]-(r1) SET r.count = count",
-		"CALL gds.graph.create('networkgraph', ['IP', 'MAC'], 'COMMUNICATES', { relationshipProperties: 'count' })",
+		"CALL gds.graph.drop('networkgraph')",
+		"MATCH (r1)-[r3:CONNECTED]->(r2) WITH r1, r2, COUNT(*) AS ports, sum(r3.count) as total, sum(r3.data_size) as data MERGE (r2)<-[r:COMMUNICATES]-(r1) SET r.ports = ports, r.total = total, r.data = data",
+		"CALL gds.graph.create('networkgraph', ['IP', 'MAC'], 'COMMUNICATES', { relationshipProperties: 'total' })",
 		"CALL gds.labelPropagation.write('networkgraph', { writeProperty: 'community' })",
 		"CALL gds.pageRank.write('networkgraph',{writeProperty: 'pagerank'})",
 	]
