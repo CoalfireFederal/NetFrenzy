@@ -26,6 +26,7 @@ def main():
     if not args.pcap:
         print(f'try --help')
         return
+    print(f'Filename: {args.pcap}')
 
     ws = wireshark.Wireshark(args.pcap)
     n4j = neo4j.Neo4j()
