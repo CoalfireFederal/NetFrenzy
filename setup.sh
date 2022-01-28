@@ -12,7 +12,7 @@ sudo mv neo4j-graph-data-science-1.8.3.jar /var/lib/neo4j/plugins/neo4j-graph-da
 sudo chown neo4j:adm /var/lib/neo4j/plugins/neo4j-graph-data-science-1.8.3.jar
 
 # Change config
-sudo echo "dbms.security.procedures.unrestricted=gds.*" >> /etc/neo4j/neo4j.conf
+echo "dbms.security.procedures.unrestricted=gds.*" | sudo tee -a /etc/neo4j/neo4j.conf
 
 # Restart neo4j
 sudo systemctl restart neo4j
