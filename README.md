@@ -8,6 +8,9 @@ Please make a new branch to make modifications, then submit a pull request rathe
 # Usage
 
 ## Setup
+
+Install Neo4j with the instructions [here](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-neo4j-on-ubuntu-20-04)
+
 `./setup.sh` will install the Python dependencies and install Neo4j's Graph Data Science Library
 
 ## Run
