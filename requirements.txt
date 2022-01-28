@@ -1,4 +1,0 @@
-pyshark
-tqdm
-requests
-neo4j
