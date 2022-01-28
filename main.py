@@ -27,6 +27,7 @@ def main():
         print(f'try --help')
         return
     print(f'Filename: {args.pcap}')
+    print(f'Config: {args.config}')
 
     ws = wireshark.Wireshark(args.pcap)
     n4j = neo4j.Neo4j()

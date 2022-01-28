@@ -11,7 +11,7 @@ class Neo4j:
     def set_connection(self, connection):
         self.connection = connection
         # change default if configured
-        self.commit.replace('localhost', self.connection.ip)
+        self.commit = self.commit.replace('localhost', self.connection.ip)
         self.auth = connection.requests_auth()
 
     def execute_query(self, query):
