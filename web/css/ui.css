@@ -21,7 +21,7 @@
 	color: inherit;
 	text-decoration: inherit;
 }
-#query {
+#query, #queryhistoryol {
 	font-family: Courier;
 }
 input, label {
