@@ -94,6 +94,11 @@ function applyConfig() {
 		window.config.initial_cypher = query_history[query_history.length - 1];
 	}
 	window.viz = new NeoVis.default(window.config);
+	
+	window.viz.registerOnEvent('error', function(e) {
+		alert(e.error_msg.message);
+	});
+	
 	window.viz.render();
 }
 

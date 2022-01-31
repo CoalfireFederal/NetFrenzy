@@ -56,6 +56,11 @@ function draw() {
 	};
 
 	window.viz = new NeoVis.default(window.config);
+	
+	window.viz.registerOnEvent('error', function(e) {
+		alert(e.error_msg.message);
+	});
+	
 	window.viz.render();
 	customStartup();
 }
