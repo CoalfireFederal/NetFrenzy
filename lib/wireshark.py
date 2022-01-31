@@ -2,7 +2,7 @@ import tqdm
 
 import pyshark
 
-import multicast
+from . import multicast
 
 class Wireshark:
     def __init__(self, pcap_filename, keep_packets=False):

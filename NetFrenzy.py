@@ -1,9 +1,9 @@
 import sys
 import argparse
 
-import wireshark
-import neo4j
-import connection
+import lib.wireshark as wireshark
+import lib.neo4j as neo4j
+import lib.connection as connection
 
 def parse_args():
   parser = argparse.ArgumentParser(description='Import a pcap into Neo4j')
