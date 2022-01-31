@@ -64,6 +64,9 @@ function applyConfig() {
 			break;
 	}	
 	switch (caption) {
+		case "none":
+			window.config.relationships["CONNECTED"]["caption"] = false;
+			break;
 		case "service":
 			window.config.relationships["CONNECTED"]["caption"] = "service";
 			break;
