@@ -33,7 +33,7 @@ If you have multiple PCAPs, you can run this injestor in parallel to get speed b
 
 ## Using the custom Neovis.js client
 
-Found at `/web/index.html`, just open it in your browser
+Found at `/web/NetFrenzy.html`, just open it in your browser
 
 I made this
 
