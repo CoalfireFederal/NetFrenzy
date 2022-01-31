@@ -2,7 +2,6 @@ import tqdm
 
 import pyshark
 
-import neo4j
 import multicast
 
 class Wireshark:
