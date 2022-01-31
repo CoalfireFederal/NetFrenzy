@@ -83,13 +83,19 @@ def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, serv
     if port_dst is None:
         port_dst = -1
 
+    # Create CONNECTED relationship between IPs
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
-    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
-    ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
+    ON CREATE
+        SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
+    ON MATCH
+        SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
+        SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
+        SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
 return r'''
     neo4j.raw_query(query)
+    # Update service for CONNECTED relationship
     query = f'''MATCH (n:IP {{name: "{ip_src}"}})
 MATCH (m:IP {{name: "{ip_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
@@ -99,13 +105,19 @@ return r.service'''
     neo4j.raw_query(query)
 
 def create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
+    # Create CONNECTED relationship between MACs
     query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
 MATCH (m:MAC {{name: "{mac_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
-    ON CREATE SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
-    ON MATCH SET r += {{last_seen: {time}, data_size: r.data_size+{length}, count: r.count+1}}
+    ON CREATE
+        SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
+    ON MATCH
+        SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
+        SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
+        SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
 return r'''
     neo4j.raw_query(query)
+    # Update service for CONNECTED relationship
     query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
 MATCH (m:MAC {{name: "{mac_dst}"}})
 MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
