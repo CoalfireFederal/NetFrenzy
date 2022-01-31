@@ -5,6 +5,8 @@ Import a pcap file into Neo4j and view the network graph
 
 Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch.
 
+Please check out the [Good First Issues](https://github.com/CoalfireFederal/NetFrenzy/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Assign yourself to the issue to let me know you're working on it.
+
 If you have an old version of this repository, you can update your remote origin by:
 ```
 git remote rename origin old
