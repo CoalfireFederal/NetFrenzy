@@ -28,9 +28,14 @@ Install Neo4j with the instructions [here](https://www.digitalocean.com/communit
 python3 NetFrenzy.py -p ../path/to/your.pcap -c ws4j.json -nc
 ```
 
-Processes approx. 30-60 packets per second into Neo4j.
+Processes approx. 45-55 packets per second into Neo4j.
 
-If you have multiple PCAPs, you can run this injestor in parallel to get speed benefits up to the number of CPUs assigned to your VM.
+Neo4j can be run in the same VM as the ingestor or in a separate VM.
+
+Recommended minimum VM specs:
+
+ - 6GB RAM, no swap
+ - 3 CPU assigned
 
 # Why
 
