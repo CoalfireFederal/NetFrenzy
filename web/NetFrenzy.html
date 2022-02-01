@@ -83,10 +83,11 @@
 			<a id="querytitle" onclick="toggleQuery()" href="#">Query</a> &nbsp;
 			<div id="queryui">
 				<input name="query" value="" type="text" id="query">
-				<input type="submit" id="runquery" value="▶" onclick="runQuery()">
-				<input type="submit" value="⏸" onclick="window.viz.stabilize()">
-				<input type="submit" value="𝒾" onclick="toggleInfo()">
-				<input type="submit" value="𝒽" onclick="toggleHistory()">
+				<input type="submit" title="run query" id="runquery" value="▶" onclick="runQuery()">
+				<input type="submit" value="↕" title="toggle multiline" id="linetoggle" onclick="toggleTextArea()">
+				<input type="submit" value="⏸" title="stabilize graph" onclick="window.viz.stabilize()">
+				<input type="submit" value="𝒾" title="show info" onclick="toggleInfo()">
+				<input type="submit" value="𝒽" title="show history" onclick="toggleHistory()">
 				<div id="queryhistory">
 								<p>History</p>
 								<ol id="queryhistoryol"></ol>

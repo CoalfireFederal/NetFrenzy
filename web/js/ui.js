@@ -199,6 +199,27 @@ function initHelpfulQueries() {
 	}
 }
 
+//toggle for multi-line queries
+function toggleTextArea(){
+	if (document.getElementById('query').tagName == 'INPUT') {
+		var input = document.getElementById('query');
+		var text = document.createElement('textarea');
+		text.setAttribute('name', input.getAttribute('name'));
+		text.setAttribute('id', input.getAttribute('id'));
+		text.setAttribute('rows', '6');
+		text.value = input.value;
+		input.parentNode.replaceChild(text, input);
+	}
+	else if (document.getElementById('query').tagName == 'TEXTAREA') {
+		var text = document.getElementById('query');
+		var input = document.createElement('input');
+		input.setAttribute('name', text.getAttribute('name'));
+		input.setAttribute('id', text.getAttribute('id'));
+		input.value = text.value;
+		text.parentNode.replaceChild(input, text);
+	}
+}
+
 function createcommunity(i) {
 	var commands = [
 		"CALL gds.graph.drop('networkgraph')",
