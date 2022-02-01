@@ -1,3 +1,5 @@
+from collections import deque
+import time
 import tqdm
 
 import pyshark
@@ -12,6 +14,13 @@ class Wireshark:
         self.count = None
         self.do_count = True
         self.debug_at = -2
+        self.debug_time = False
+        self._time_start = 0
+        self.debug_time_neo4j = 0
+        self.debug_cache = False
+        self.cache = {}
+        self.cache_max = 0
+        self.cache_init()
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -43,120 +52,221 @@ class Wireshark:
             ssid = get_ssid(packet)
 
             # Create/merge nodes for the IP addresses
-            create_ip(neo4j, ip_src)
-            create_ip(neo4j, ip_dst)
+            self.create_ip(neo4j, ip_src)
+            self.create_ip(neo4j, ip_dst)
 
             # Create/merge nodes for the MAC addresses
-            create_mac(neo4j, mac_src, oui=oui_src)
-            create_mac(neo4j, mac_dst, oui=oui_dst)
-            create_mac(neo4j, mac_tra)
-            create_mac(neo4j, mac_rec)
+            self.create_mac(neo4j, mac_src, oui=oui_src)
+            self.create_mac(neo4j, mac_dst, oui=oui_dst)
+            self.create_mac(neo4j, mac_tra)
+            self.create_mac(neo4j, mac_rec)
 
             # Assign the IP addresses to the MAC addresses
-            if mac_src not in self.ignore and ip_src is not None:
-                neo4j.new_relationship(ip_src, mac_src, 'ASSIGNED')
-            if mac_dst not in self.ignore and ip_dst is not None:
-                neo4j.new_relationship(ip_dst, mac_dst, 'ASSIGNED')
+            self.create_mac_assignment(neo4j, ip_src, mac_src)
+            self.create_mac_assignment(neo4j, ip_dst, mac_dst)
 
             # Create or update the connection relationship for the packet
             if None not in (ip_src, ip_dst):
                 # Create a connection between IP addresses
-                create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+                self.create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
             elif None not in (mac_src, mac_dst):
                 # Create a connection between MAC addresses
-                create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
+                self.create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
             if None not in (mac_src, mac_dst, mac_tra, mac_rec):
                 # Create a connection between MAC addresses
                 # This is for wlan frames that have ra and ta
                 # We are connecting the sender to transmitter, receiver to destination
-                create_connection_mac(neo4j, mac_src, mac_tra, proto, time, length, service, service_layer)
-                create_connection_mac(neo4j, mac_rec, mac_dst, proto, time, length, service, service_layer)
+                self.create_connection_mac(neo4j, mac_src, mac_tra, proto, time, length, service, service_layer)
+                self.create_connection_mac(neo4j, mac_rec, mac_dst, proto, time, length, service, service_layer)
 
-            if ssid is not None:
-                neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
-                neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
+            self.create_ssid(neo4j, ssid, mac_src)
 
             debug_count += 1
+        self.print_debug_time()
+        self.print_cache_stats()
 
-def create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
-    if port_dst is None:
-        port_dst = -1
+    def debug_time_start(self):
+        if self.debug_time:
+            self._time_start = time.time()
 
-    # Create CONNECTED relationship between IPs
-    query = f'''MATCH (n:IP {{name: "{ip_src}"}})
-MATCH (m:IP {{name: "{ip_dst}"}})
-MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
-    ON CREATE
-        SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
-    ON MATCH
-        SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
-        SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
-        SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
-return r'''
-    neo4j.raw_query(query)
-    # Update service for CONNECTED relationship
-    query = f'''MATCH (n:IP {{name: "{ip_src}"}})
-MATCH (m:IP {{name: "{ip_dst}"}})
-MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
-    SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
-    SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
-return r.service'''
-    neo4j.raw_query(query)
+    def debug_time_end(self):
+        if self.debug_time:
+            _time_end = time.time()
+            self.debug_time_neo4j += _time_end - self._time_start
 
-def create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
-    # Create CONNECTED relationship between MACs
-    query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
-MATCH (m:MAC {{name: "{mac_dst}"}})
-MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
-    ON CREATE
-        SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
-    ON MATCH
-        SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
-        SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
-        SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
-return r'''
-    neo4j.raw_query(query)
-    # Update service for CONNECTED relationship
-    query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
-MATCH (m:MAC {{name: "{mac_dst}"}})
-MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
-    SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
-    SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
-return r.service'''
-    neo4j.raw_query(query)
+    def print_debug_time(self):
+        if self.debug_time:
+            print(f'Time in Neo4j: {self.debug_time_neo4j}')
 
-'''
-Deprecated, creates too many edges which probably aren't useful anyway
-'''
-def create_port_relationship(neo4j, ip_src, ip_dst, port_src, port_dst, proto, time, length):
-    props = '{'
-    props += f'srcport: {port_src}, '
-    props += f'dstport: {port_dst}, '
-    props += f'protocol: "{proto}", '
-    props += f'time: {time}, '
-    props += f'length: {length}'
-    props += '}'
-    neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
+    def cache_init(self):
+        self.cache = {
+            'IP': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'MAC': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'ASSIGN': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'SSID': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'ADVERTISE': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+        }
+        self.cache_max = 50
 
-def create_mac(neo4j, mac, oui=None):
-    if mac is None:
-        return
-    man = ''
-    if oui not in (None, 'None'):
-        man = f', manufacturer: "{oui}"'
-    multi = ''
-    if multicast.mac_multicast(mac):
-        multi = ', multicast: "likely"'
-    neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
+    def print_cache_stats(self):
+        if not self.debug_cache:
+            return
+        keys = ['IP', 'MAC', 'ASSIGN', 'SSID']
+        print(f'cache_max: {self.cache_max}')
+        for k in keys:
+            print(f'cache[{k}]:')
+            print(f'\tHits:\t{self.cache[k]["hits"]}')
+            print(f'\tMiss:\t{self.cache[k]["misses"]}')
+            print(f'\tUse:\t{len(self.cache[k]["cache"])}/{self.cache_max}')
 
-def create_ip(neo4j, ip):
-    if ip is None:
-        return
-    mc = multicast.ip_multicast(ip)
-    mcast = ''
-    if mc:
-        mcast = ', multicast: true'
-    neo4j.new_node('IP', f'{{name: "{ip}"{mcast}}}')
+    def cached(self, value, _type):
+        is_cached = False
+        if value in self.cache[_type]['cache']:
+            is_cached = True
+            self.cache[_type]['hits'] += 1
+        else:
+            self.cache[_type]['misses'] += 1
+            self.cache[_type]['cache'].append(value)
+            if len(self.cache[_type]['cache']) > self.cache_max:
+                self.cache[_type]['cache'].popleft()
+        return is_cached
+    
+    '''
+    Deprecated, creates too many edges which probably aren't useful anyway
+    '''
+    def create_port_relationship(self, neo4j, ip_src, ip_dst, port_src, port_dst, proto, time, length):
+        props = '{'
+        props += f'srcport: {port_src}, '
+        props += f'dstport: {port_dst}, '
+        props += f'protocol: "{proto}", '
+        props += f'time: {time}, '
+        props += f'length: {length}'
+        props += '}'
+        self.debug_time_start()
+        neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
+        self.debug_time_end()
+
+    def create_ip(self, neo4j, ip):
+        if ip is None:
+            return
+        if self.cached(ip, 'IP'):
+            return
+        mc = multicast.ip_multicast(ip)
+        mcast = ''
+        if mc:
+            mcast = ', multicast: true'
+        self.debug_time_start()
+        neo4j.new_node('IP', f'{{name: "{ip}"{mcast}}}')
+        self.debug_time_end()
+    
+    def create_mac(self, neo4j, mac, oui=None):
+        if mac is None:
+            return
+        if self.cached(mac, 'MAC'):
+            return
+        man = ''
+        if oui not in (None, 'None'):
+            man = f', manufacturer: "{oui}"'
+        multi = ''
+        if multicast.mac_multicast(mac):
+            multi = ', multicast: "likely"'
+        self.debug_time_start()
+        neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
+        self.debug_time_end()
+    
+    def create_mac_assignment(self, neo4j, ip, mac):
+        if mac not in self.ignore and ip is not None:
+            if self.cached([ip, mac], 'ASSIGN'):
+                return
+            self.debug_time_start()
+            neo4j.new_relationship(ip, mac, 'ASSIGNED')
+            self.debug_time_end()
+    
+    def create_connection(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
+        if port_dst is None:
+            port_dst = -1
+    
+        # Create CONNECTED relationship between IPs
+        query = f'''MATCH (n:IP {{name: "{ip_src}"}})
+    MATCH (m:IP {{name: "{ip_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+        ON CREATE
+            SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
+        ON MATCH
+            SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
+            SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
+            SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
+    return r'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+        # Update service for CONNECTED relationship
+        query = f'''MATCH (n:IP {{name: "{ip_src}"}})
+    MATCH (m:IP {{name: "{ip_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+        SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
+        SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
+    return r.service'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+    
+    def create_connection_mac(self, neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
+        # Create CONNECTED relationship between MACs
+        query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
+    MATCH (m:MAC {{name: "{mac_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
+        ON CREATE
+            SET r += {{first_seen: {time}, last_seen: {time}, data_size: {length}, service: "{service}", service_layer: {service_layer}, count: 1}}
+        ON MATCH
+            SET r.first_seen = (CASE WHEN {time} > r.first_seen THEN r.first_seen ELSE {time} END)
+            SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
+            SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
+    return r'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+        # Update service for CONNECTED relationship
+        query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
+    MATCH (m:MAC {{name: "{mac_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
+        SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
+        SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
+    return r.service'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+
+    def create_ssid(self, neo4j, ssid, mac_src):
+        if ssid is not None:
+            if not self.cached(ssid, 'SSID'):
+                self.debug_time_start()
+                neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
+                self.debug_time_end()
+            if not self.cached([mac_src, ssid], 'ADVERTISE'):
+                self.debug_time_start()
+                neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
+                self.debug_time_end()
 
 def get_protocol(packet):
     for layer in packet.layers:

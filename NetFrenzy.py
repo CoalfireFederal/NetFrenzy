@@ -12,7 +12,10 @@ def parse_args():
   parser.add_argument('-i', '--ignore', type=str, help='MAC address to ignore (like the GW which would correspond to all other IPs)')
   parser.add_argument('-d', '--debug', action='store_true', help='Use pdb to debug Neo4j responses')
   parser.add_argument('-da', '--debug-at', type=int, help='Use pdb to debug Neo4j responses at a specific iteration')
+  parser.add_argument('--debug-time', action='store_true', help='Enable Neo4j time performance tracking')
+  parser.add_argument('--debug-cache', action='store_true', help='Print cache stats after execution')
   parser.add_argument('-nc', '--no-count', action='store_true', help='Disable count for progress bar')
+  parser.add_argument('--cache-max', type=int, help='Max cache size for each of the cache types', default=50)
   parser.add_argument('--count', type=int, help='Number of packets in the pcap (optional)')
   if len(sys.argv) == 1:
     parser.print_help()
@@ -44,6 +47,13 @@ def main():
         ws.count = args.count
     if args.debug_at:
         ws.debug_at = args.debug_at
+    if args.debug_time:
+        ws.debug_time = args.debug_time
+
+    if args.debug_cache:
+        ws.debug_cache = args.debug_cache
+    ws.cache_max = args.cache_max
+
     ws.upload_to_neo4j(n4j)
 
 if __name__=='__main__':
