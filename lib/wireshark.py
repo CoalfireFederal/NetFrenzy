@@ -120,6 +120,11 @@ class Wireshark:
                 'hits': 0,
                 'misses': 0,
             },
+            'ADVERTISE': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
         }
         self.cache_max = 50
 
@@ -254,11 +259,14 @@ class Wireshark:
 
     def create_ssid(self, neo4j, ssid, mac_src):
         if ssid is not None:
-            self.debug_time_start()
             if not self.cached(ssid, 'SSID'):
+                self.debug_time_start()
                 neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
-            neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
-            self.debug_time_end()
+                self.debug_time_end()
+            if not self.cached([mac_src, ssid], 'ADVERTISE'):
+                self.debug_time_start()
+                neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
+                self.debug_time_end()
 
 def get_protocol(packet):
     for layer in packet.layers:
