@@ -22,6 +22,9 @@ function toggleInfo() {
 function toggleError() {
 	toggleElem("error-floater");
 }
+function toggleSelected() {
+	toggleElem("selected-info");
+}
 
 function applyConfig() {
 	var server = document.getElementById("server").value;
@@ -103,10 +106,14 @@ function applyConfig() {
 		window.config.initial_cypher = query_history[query_history.length - 1];
 	}
 	window.viz = new NeoVis.default(window.config);
-	
-	window.viz.registerOnEvent('error', neo4jErrorHandler);
-	
+	registerHandlers();	
 	window.viz.render();
+}
+
+function registerHandlers() {
+	window.viz.registerOnEvent("error", neo4jErrorHandler);
+	window.viz.registerOnEvent("clickNode", clickHandler);
+	window.viz.registerOnEvent("clickEdge", clickHandler);
 }
 
 function neo4jErrorHandler(e) {
@@ -116,6 +123,15 @@ function neo4jErrorHandler(e) {
 	var elem = document.getElementById("error-floater");
 	if (elem.style.display == "none" || elem.style.display == "") {
 		elem.style.display = "block";
+	}
+}
+
+function clickHandler(e) {
+	var elem = document.getElementById("selected-info");
+	if ("node" in e) {
+		elem.innerHTML = e.node.title;
+	} else {
+		elem.innerHTML = e.edge.title;
 	}
 }
 

@@ -11,6 +11,13 @@
 	top: 10px;
 	z-index: 2;
 }
+#selected-floater {
+	position: absolute;
+	right: 10px;
+	bottom: 10px;
+	z-index: 2;
+	border: 1px solid lightgray;
+}
 #error-floater {
 	position: fixed;
 	left: 50%;
@@ -26,7 +33,7 @@
 #query {
 	width: 50vw;
 }
-#configtitle, #querytitle, .hq-item {
+#configtitle, #querytitle, .hq-item, #selected-floater a {
 	color: inherit;
 	text-decoration: inherit;
 }
@@ -36,15 +43,12 @@
 input, label {
 	vertical-align: middle;
 }
-label, #error-message, .error-close {
+label, #error-message, .error-close, #queryui div, #selected-info {
 	font-size: 14px;
 }
 .config-floater, .query-floater, #error-floater {
 	border: 1px solid lightgray;
 	padding: 2px;
-}
-#queryui div {
-	font-size: 14px;
 }
 #queryhistory, #queryinfo {
 	display: none;
