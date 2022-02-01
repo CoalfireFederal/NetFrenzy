@@ -19,6 +19,9 @@ function toggleHistory() {
 function toggleInfo() {
 	toggleElem("queryinfo");
 }
+function toggleError() {
+	toggleElem("error-floater");
+}
 
 function applyConfig() {
 	var server = document.getElementById("server").value;
@@ -90,22 +93,41 @@ function applyConfig() {
 			break;
 	}
 	
+	// Toggle error visibility if required
+	var elem = document.getElementById("error-floater");
+	if (elem.style.display == "block") {
+		elem.style.display = "none";
+	}
+	
 	if (query_history.length >= 1) {
 		window.config.initial_cypher = query_history[query_history.length - 1];
 	}
 	window.viz = new NeoVis.default(window.config);
 	
-	window.viz.registerOnEvent('error', function(e) {
-		alert(e.error_msg.message);
-	});
+	window.viz.registerOnEvent('error', neo4jErrorHandler);
 	
 	window.viz.render();
+}
+
+function neo4jErrorHandler(e) {
+	var elem = document.getElementById("error-message");
+	elem.innerText = e.error_msg.message;
+	// Toggle error visibility if required
+	var elem = document.getElementById("error-floater");
+	if (elem.style.display == "none" || elem.style.display == "") {
+		elem.style.display = "block";
+	}
 }
 
 function runQuery() {
 	var q = document.getElementById("query").value;
 	if (q === "") { return; }
 	manage_qhistory_new(q);
+	// Toggle error visibility if required
+	var elem = document.getElementById("error-floater");
+	if (elem.style.display == "block") {
+		elem.style.display = "none";
+	}
 	window.viz.renderWithCypher(q);
 }
 

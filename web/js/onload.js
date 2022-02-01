@@ -57,9 +57,7 @@ function draw() {
 
 	window.viz = new NeoVis.default(window.config);
 	
-	window.viz.registerOnEvent('error', function(e) {
-		alert(e.error_msg.message);
-	});
+	window.viz.registerOnEvent('error', neo4jErrorHandler);
 	
 	window.viz.render();
 	customStartup();

@@ -11,6 +11,15 @@
 	top: 10px;
 	z-index: 2;
 }
+#error-floater {
+	position: fixed;
+	left: 50%;
+	bottom: 20px;
+	transform: translate(-50%, 0%);
+	margin: 0 auto;
+	max-width: 100%;
+	display: none;
+}
 #configtitle, #queryui {
 	float: right;
 }
@@ -21,16 +30,16 @@
 	color: inherit;
 	text-decoration: inherit;
 }
-#query, #queryhistoryol {
+#query, #queryhistoryol, #error-message {
 	font-family: Courier;
 }
 input, label {
 	vertical-align: middle;
 }
-label {
+label, #error-message, .error-close {
 	font-size: 14px;
 }
-.config-floater, .query-floater {
+.config-floater, .query-floater, #error-floater {
 	border: 1px solid lightgray;
 	padding: 2px;
 }
@@ -39,4 +48,13 @@ label {
 }
 #queryhistory, #queryinfo {
 	display: none;
+}
+pre {
+	margin: 0px;
+}
+#error-message {
+	margin-right: 25px;
+}
+.error-close {
+	float: right;
 }
