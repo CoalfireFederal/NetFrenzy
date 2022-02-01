@@ -10,6 +10,7 @@
 	left: 10px;
 	top: 10px;
 	z-index: 2;
+	background-color: rgba(255, 255, 255, 0.75);
 }
 #error-floater {
 	position: fixed;
@@ -24,6 +25,7 @@
 	float: right;
 }
 #query {
+	display: inline-block;
 	width: 50vw;
 }
 #configtitle, #querytitle, .hq-item {
@@ -45,6 +47,11 @@ label, #error-message, .error-close {
 }
 #queryui div {
 	font-size: 14px;
+}
+#query-buttons {
+    display: inline;
+	position: fixed;
+	margin-left: 10px;
 }
 #queryhistory, #queryinfo {
 	display: none;

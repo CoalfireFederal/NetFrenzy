@@ -199,16 +199,18 @@ function initHelpfulQueries() {
 	}
 }
 
-//toggle for multi-line queries
+//toggle between <input> and <textarea> query forms
 function toggleTextArea(){
 	if (document.getElementById('query').tagName == 'INPUT') {
 		var input = document.getElementById('query');
 		var text = document.createElement('textarea');
 		text.setAttribute('name', input.getAttribute('name'));
 		text.setAttribute('id', input.getAttribute('id'));
-		text.setAttribute('rows', '6');
+		text.setAttribute('rows', '8');
 		text.value = input.value;
 		input.parentNode.replaceChild(text, input);
+		document.getElementById('linetoggle').setAttribute("value", "↥")
+		setTabListener(text)
 	}
 	else if (document.getElementById('query').tagName == 'TEXTAREA') {
 		var text = document.getElementById('query');
@@ -217,6 +219,8 @@ function toggleTextArea(){
 		input.setAttribute('id', text.getAttribute('id'));
 		input.value = text.value;
 		text.parentNode.replaceChild(input, text);
+		document.getElementById('linetoggle').setAttribute("value", "↧")
+		setEnterListener(input)
 	}
 }
 
@@ -239,6 +243,34 @@ function createcommunity(i) {
 	}
 }
 
+function setEnterListener(el) {
+	el.addEventListener("keyup", function(event) {
+		if (event.keyCode === 13) {
+			event.preventDefault();
+			document.getElementById("runquery").click();
+		}
+	});
+}
+
+function setTabListener(el) {
+	el.addEventListener('keydown', function(e) {
+		if (e.key == 'Tab') {
+		  e.preventDefault();
+		  var start = this.selectionStart;
+		  var end = this.selectionEnd;
+	  
+		  // set textarea value to: text before caret + tab + text after caret
+		  this.value = this.value.substring(0, start) +
+			"\t" + this.value.substring(end);
+	  
+		  // put caret at right position again
+		  this.selectionStart =
+			this.selectionEnd = start + 1;
+		}
+	});
+}
+
+
 function customStartup() {
 	var inp1 = document.getElementById("password");
 	inp1.addEventListener("keyup", function(event) {
@@ -247,15 +279,10 @@ function customStartup() {
 			document.getElementById("submitconfig").click();
 		}
 	});
-	
-	var inp2 = document.getElementById("query");
-	inp2.addEventListener("keyup", function(event) {
-		if (event.keyCode === 13) {
-			event.preventDefault();
-			document.getElementById("runquery").click();
-		}
-	});
 
+	var inp2 = document.getElementById("query");
+	setEnterListener(inp2)
+	
 	var inp3 = document.getElementById("query");
 	manage_qhistory_init(inp3);
 	
