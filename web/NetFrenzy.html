@@ -87,7 +87,11 @@
 				<input type="submit" value="⏸" onclick="window.viz.stabilize()">
 				<input type="submit" value="𝒾" onclick="toggleInfo()">
 				<input type="submit" value="𝒽" onclick="toggleHistory()">
-				<div id="queryhistory"><p>History</p><ol id="queryhistoryol"></ol></div>
+				<div id="queryhistory">
+								<p>History</p>
+								<ol id="queryhistoryol"></ol>
+								<a href="#" class="hq-item" onclick="manage_qhistory_clear()">Clear</a>
+				</div>
 				<div id="queryinfo">
 					<p>Neo4j uses the Cypher query language to query the graph database. You can find a Cypher cheat sheet <a href="https://neo4j.com/docs/cypher-refcard/current/">here</a>.</p>
 					<a href="#" class="hq-item" onclick="createcommunity(0)">Create COMMUNICATES relationship, Community, and PageRank</a> (takes 20 seconds)

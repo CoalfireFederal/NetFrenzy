@@ -150,6 +150,12 @@ function manage_qhistory_new(query) {
 	manage_qhistory_list();
 }
 
+function manage_qhistory_clear() {
+	query_history_pos = 0;
+	query_history = [query_history[query_history.length - 1]];
+	manage_qhistory_list();
+}
+
 function initHelpfulQueries() {
 	var elem = document.getElementById("customqueries");
 
