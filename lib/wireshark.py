@@ -1,3 +1,4 @@
+import time
 import tqdm
 
 import pyshark
@@ -12,6 +13,9 @@ class Wireshark:
         self.count = None
         self.do_count = True
         self.debug_at = -2
+        self.debug_time = False
+        self._time_start = 0
+        self.debug_time_neo4j = 0
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -73,6 +77,20 @@ class Wireshark:
             self.create_ssid(neo4j, ssid, mac_src)
 
             debug_count += 1
+        self.print_debug_time()
+
+    def debug_time_start(self):
+        if self.debug_time:
+            self._time_start = time.time()
+
+    def debug_time_end(self):
+        if self.debug_time:
+            _time_end = time.time()
+            self.debug_time_neo4j += _time_end - self._time_start
+
+    def print_debug_time(self):
+        if self.debug_time:
+            print(f'Time in Neo4j: {self.debug_time_neo4j}')
 
     '''
     Deprecated, creates too many edges which probably aren't useful anyway
@@ -85,7 +103,9 @@ class Wireshark:
         props += f'time: {time}, '
         props += f'length: {length}'
         props += '}'
+        self.debug_time_start()
         neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
+        self.debug_time_end()
     
     def create_ip(self, neo4j, ip):
         if ip is None:
@@ -94,7 +114,9 @@ class Wireshark:
         mcast = ''
         if mc:
             mcast = ', multicast: true'
+        self.debug_time_start()
         neo4j.new_node('IP', f'{{name: "{ip}"{mcast}}}')
+        self.debug_time_end()
     
     def create_mac(self, neo4j, mac, oui=None):
         if mac is None:
@@ -105,11 +127,15 @@ class Wireshark:
         multi = ''
         if multicast.mac_multicast(mac):
             multi = ', multicast: "likely"'
+        self.debug_time_start()
         neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
+        self.debug_time_end()
     
     def create_mac_assignment(self, neo4j, ip, mac):
         if mac not in self.ignore and ip is not None:
+            self.debug_time_start()
             neo4j.new_relationship(ip, mac, 'ASSIGNED')
+            self.debug_time_end()
     
     def create_connection(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
         if port_dst is None:
@@ -126,7 +152,9 @@ class Wireshark:
             SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
             SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
     return r'''
+        self.debug_time_start()
         neo4j.raw_query(query)
+        self.debug_time_end()
         # Update service for CONNECTED relationship
         query = f'''MATCH (n:IP {{name: "{ip_src}"}})
     MATCH (m:IP {{name: "{ip_dst}"}})
@@ -134,7 +162,9 @@ class Wireshark:
         SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
         SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
     return r.service'''
+        self.debug_time_start()
         neo4j.raw_query(query)
+        self.debug_time_end()
     
     def create_connection_mac(self, neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
         # Create CONNECTED relationship between MACs
@@ -148,7 +178,9 @@ class Wireshark:
             SET r.last_seen = (CASE WHEN {time} < r.last_seen THEN r.last_seen ELSE {time} END)
             SET r += {{data_size: r.data_size+{length}, count: r.count+1}}
     return r'''
+        self.debug_time_start()
         neo4j.raw_query(query)
+        self.debug_time_end()
         # Update service for CONNECTED relationship
         query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
     MATCH (m:MAC {{name: "{mac_dst}"}})
@@ -156,12 +188,16 @@ class Wireshark:
         SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
         SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
     return r.service'''
+        self.debug_time_start()
         neo4j.raw_query(query)
+        self.debug_time_end()
 
     def create_ssid(self, neo4j, ssid, mac_src):
         if ssid is not None:
+            self.debug_time_start()
             neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
             neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
+            self.debug_time_end()
 
 def get_protocol(packet):
     for layer in packet.layers:
