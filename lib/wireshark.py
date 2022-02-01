@@ -1,3 +1,4 @@
+from collections import deque
 import time
 import tqdm
 
@@ -16,6 +17,10 @@ class Wireshark:
         self.debug_time = False
         self._time_start = 0
         self.debug_time_neo4j = 0
+        self.debug_cache = False
+        self.cache = {}
+        self.cache_max = 0
+        self.cache_init()
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -78,6 +83,7 @@ class Wireshark:
 
             debug_count += 1
         self.print_debug_time()
+        self.print_cache_stats()
 
     def debug_time_start(self):
         if self.debug_time:
@@ -92,6 +98,54 @@ class Wireshark:
         if self.debug_time:
             print(f'Time in Neo4j: {self.debug_time_neo4j}')
 
+    def cache_init(self):
+        self.cache = {
+            'IP': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'MAC': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'ASSIGN': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+            'SSID': {
+                'cache': deque([]),
+                'hits': 0,
+                'misses': 0,
+            },
+        }
+        self.cache_max = 50
+
+    def print_cache_stats(self):
+        if not self.debug_cache:
+            return
+        keys = ['IP', 'MAC', 'ASSIGN', 'SSID']
+        print(f'cache_max: {self.cache_max}')
+        for k in keys:
+            print(f'cache[{k}]:')
+            print(f'\tHits:\t{self.cache[k]["hits"]}')
+            print(f'\tMiss:\t{self.cache[k]["misses"]}')
+            print(f'\tUse:\t{len(self.cache[k]["cache"])}/{self.cache_max}')
+
+    def cached(self, value, _type):
+        is_cached = False
+        if value in self.cache[_type]['cache']:
+            is_cached = True
+            self.cache[_type]['hits'] += 1
+        else:
+            self.cache[_type]['misses'] += 1
+            self.cache[_type]['cache'].append(value)
+            if len(self.cache[_type]['cache']) > self.cache_max:
+                self.cache[_type]['cache'].popleft()
+        return is_cached
+    
     '''
     Deprecated, creates too many edges which probably aren't useful anyway
     '''
@@ -106,9 +160,11 @@ class Wireshark:
         self.debug_time_start()
         neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
         self.debug_time_end()
-    
+
     def create_ip(self, neo4j, ip):
         if ip is None:
+            return
+        if self.cached(ip, 'IP'):
             return
         mc = multicast.ip_multicast(ip)
         mcast = ''
@@ -120,6 +176,8 @@ class Wireshark:
     
     def create_mac(self, neo4j, mac, oui=None):
         if mac is None:
+            return
+        if self.cached(mac, 'MAC'):
             return
         man = ''
         if oui not in (None, 'None'):
@@ -133,6 +191,8 @@ class Wireshark:
     
     def create_mac_assignment(self, neo4j, ip, mac):
         if mac not in self.ignore and ip is not None:
+            if self.cached([ip, mac], 'ASSIGN'):
+                return
             self.debug_time_start()
             neo4j.new_relationship(ip, mac, 'ASSIGNED')
             self.debug_time_end()
@@ -195,7 +255,8 @@ class Wireshark:
     def create_ssid(self, neo4j, ssid, mac_src):
         if ssid is not None:
             self.debug_time_start()
-            neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
+            if not self.cached(ssid, 'SSID'):
+                neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
             neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
             self.debug_time_end()
 
