@@ -209,7 +209,6 @@ function toggleTextArea(){
 		text.setAttribute('rows', '8');
 		text.value = input.value;
 		input.parentNode.replaceChild(text, input);
-		document.getElementById('linetoggle').setAttribute("value", "↥")
 		setTabListener(text)
 	}
 	else if (document.getElementById('query').tagName == 'TEXTAREA') {
@@ -219,7 +218,6 @@ function toggleTextArea(){
 		input.setAttribute('id', text.getAttribute('id'));
 		input.value = text.value;
 		text.parentNode.replaceChild(input, text);
-		document.getElementById('linetoggle').setAttribute("value", "↧")
 		setEnterListener(input)
 	}
 }

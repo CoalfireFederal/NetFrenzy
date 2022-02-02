@@ -25,7 +25,6 @@
 	float: right;
 }
 #query {
-	display: inline-block;
 	width: 50vw;
 }
 #configtitle, #querytitle, .hq-item {
@@ -34,6 +33,7 @@
 }
 #query, #queryhistoryol, #error-message {
 	font-family: Courier;
+	font-size: 14px;
 }
 input, label {
 	vertical-align: middle;

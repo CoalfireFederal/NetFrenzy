@@ -85,15 +85,15 @@
 				<input name="query" value="" type="text" id="query">
 				<div id="query-buttons">
 					<input type="submit" title="run query" id="runquery" value="▶" onclick="runQuery()">
-					<input type="submit" value="↧" title="toggle multiline" id="linetoggle" onclick="toggleTextArea()">
+					<input type="submit" value="↕" title="toggle multiline" id="linetoggle" onclick="toggleTextArea()">
 					<input type="submit" value="⏸" title="stabilize graph" onclick="window.viz.stabilize()">
 					<input type="submit" value="𝒾" title="show info" onclick="toggleInfo()">
 					<input type="submit" value="𝒽" title="show history" onclick="toggleHistory()">
 				</div>
 				<div id="queryhistory">
-							<p>History</p>
-							<ol id="queryhistoryol"></ol>
-							<a href="#" class="hq-item" onclick="manage_qhistory_clear()">Clear</a>
+					<p>History</p>
+					<ol id="queryhistoryol"></ol>
+					<a href="#" class="hq-item" onclick="manage_qhistory_clear()">Clear</a>
 				</div>
 				<div id="queryinfo">
 					<p>Neo4j uses the Cypher query language to query the graph database. You can find a Cypher cheat sheet <a href="https://neo4j.com/docs/cypher-refcard/current/">here</a>.</p>
