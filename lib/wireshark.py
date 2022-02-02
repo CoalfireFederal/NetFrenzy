@@ -3,6 +3,7 @@ import time
 import tqdm
 
 import pyshark
+from OuiLookup import OuiLookup
 
 from . import multicast
 
@@ -44,10 +45,9 @@ class Wireshark:
             proto = get_protocol(packet)
             time = get_time(packet)
             length = get_length(packet)
-            mac_src, mac_dst, mac_tra, mac_rec = get_macs(packet)
+            macs = get_macs(packet, cached=self.is_cached)
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
-            oui_src, oui_dst = get_oui(packet)
             service, service_layer = get_service(packet)
             ssid = get_ssid(packet)
 
@@ -56,30 +56,27 @@ class Wireshark:
             self.create_ip(neo4j, ip_dst)
 
             # Create/merge nodes for the MAC addresses
-            self.create_mac(neo4j, mac_src, oui=oui_src)
-            self.create_mac(neo4j, mac_dst, oui=oui_dst)
-            self.create_mac(neo4j, mac_tra)
-            self.create_mac(neo4j, mac_rec)
+            self.create_macs(neo4j, macs)
 
             # Assign the IP addresses to the MAC addresses
-            self.create_mac_assignment(neo4j, ip_src, mac_src)
-            self.create_mac_assignment(neo4j, ip_dst, mac_dst)
+            self.create_mac_assignment(neo4j, ip_src, macs['src']['mac'])
+            self.create_mac_assignment(neo4j, ip_dst, macs['dst']['mac'])
 
             # Create or update the connection relationship for the packet
             if None not in (ip_src, ip_dst):
                 # Create a connection between IP addresses
                 self.create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
-            elif None not in (mac_src, mac_dst):
+            elif None not in (macs['src']['mac'], macs['dst']['mac']):
                 # Create a connection between MAC addresses
-                self.create_connection_mac(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
-            if None not in (mac_src, mac_dst, mac_tra, mac_rec):
+                self.create_connection_mac(neo4j, macs['src']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+            if None not in (macs['src']['mac'], macs['dst']['mac'], macs['tra']['mac'], macs['rec']['mac']):
                 # Create a connection between MAC addresses
                 # This is for wlan frames that have ra and ta
                 # We are connecting the sender to transmitter, receiver to destination
-                self.create_connection_mac(neo4j, mac_src, mac_tra, proto, time, length, service, service_layer)
-                self.create_connection_mac(neo4j, mac_rec, mac_dst, proto, time, length, service, service_layer)
+                self.create_connection_mac(neo4j, macs['src']['mac'], macs['tra']['mac'], proto, time, length, service, service_layer)
+                self.create_connection_mac(neo4j, macs['rec']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
 
-            self.create_ssid(neo4j, ssid, mac_src)
+            self.create_ssid(neo4j, ssid, macs['src']['mac'])
 
             debug_count += 1
         self.print_debug_time()
@@ -150,6 +147,16 @@ class Wireshark:
             if len(self.cache[_type]['cache']) > self.cache_max:
                 self.cache[_type]['cache'].popleft()
         return is_cached
+
+    # Like cached(), but doesn't update cache
+    def is_cached(self, value, _type):
+        cached = False
+        if value in self.cache[_type]['cache']:
+            cached = True
+            self.cache[_type]['hits'] += 1
+        else:
+            self.cache[_type]['misses'] += 1
+        return cached
     
     '''
     Deprecated, creates too many edges which probably aren't useful anyway
@@ -177,17 +184,22 @@ class Wireshark:
         neo4j.create_node('IP', ip, properties=properties)
         self.debug_time_end()
     
-    def create_mac(self, neo4j, mac, oui=None):
-        if mac is None:
+    def create_macs(self, neo4j, macs):
+        if macs is None:
             return
-        if self.cached(mac, 'MAC'):
-            return
-        properties = {}
-        properties['manufacturer'] = oui
-        properties['multicast'] = multicast.mac_multicast(mac)
-        self.debug_time_start()
-        neo4j.create_node('MAC', mac, properties=properties)
-        self.debug_time_end()
+        for k in macs:
+            mac = macs[k]['mac']
+            if mac is None:
+                continue
+            if self.cached(mac, 'MAC'):
+                continue
+            oui = macs[k]['oui']
+            properties = {}
+            properties['manufacturer'] = oui
+            properties['multicast'] = multicast.mac_multicast(mac)
+            self.debug_time_start()
+            neo4j.create_node('MAC', mac, properties=properties)
+            self.debug_time_end()
     
     def create_mac_assignment(self, neo4j, ip, mac):
         if mac not in self.ignore and ip is not None:
@@ -279,7 +291,38 @@ def get_protocol(packet):
         # eth -> ???
         return packet.layers[1].layer_name
 
-def get_macs(packet):
+def get_macs(packet, cached=None):
+    macs = {}
+    macs['src'] = {'mac': None, 'oui': None}
+    macs['dst'] = {'mac': None, 'oui': None}
+    macs['tra'] = {'mac': None, 'oui': None}
+    macs['rec'] = {'mac': None, 'oui': None}
+
+    if 'eth' in packet:
+        macs['src']['mac'] = packet.eth.get_field('src')
+        macs['dst']['mac'] = packet.eth.get_field('dst')
+    if 'wlan' in packet:
+        macs['src']['mac'] = packet.wlan.get_field('sa')
+        macs['dst']['mac'] = packet.wlan.get_field('da')
+        macs['tra']['mac'] = packet.wlan.get_field('ta')
+        macs['rec']['mac'] = packet.wlan.get_field('ra')
+        if macs['src']['mac'] == macs['tra']['mac']:
+            macs['tra']['mac'] = None
+        if macs['dst']['mac'] == macs['rec']['mac']:
+            macs['rec']['mac'] = None
+    
+    for k in macs:
+        if macs[k]['mac'] is not None:
+            if cached is not None and cached(macs[k]['mac'], 'MAC'):
+                continue
+            macs[k]['oui'] = get_oui(macs[k]['mac'])
+
+    return macs
+
+'''
+Deprecated. Use get_macs()
+'''
+def get_macs_old(packet):
     if 'eth' in packet:
         mac_src = packet.eth.get_field('src')
         mac_dst = packet.eth.get_field('dst')
@@ -315,7 +358,18 @@ def get_time(packet):
 def get_length(packet):
     return int(packet.captured_length)
 
-def get_oui(packet):
+def get_oui(mac):
+    try:
+        for k, v in OuiLookup().query(mac)[0].items():
+            return v
+    except:
+        pass
+    return None
+
+'''
+Deprecated. Use get_oui()
+'''
+def get_oui_old(packet):
     oui_src = None
     if 'eth' in packet and 'src_oui_resolved' in packet.eth.field_names:
         oui_src = packet.eth.src_oui_resolved
