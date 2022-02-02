@@ -24,7 +24,7 @@ class Neo4j:
         except Exception as e:
             print(f'Exception:\t{type(e)}: {e}')
             print(f'Query:\t{query}')
-            print(f'Response:\tresp.json()')
+            print(f'Response:\t{resp.json()}')
             raise
 
     def nuke_all_data(self):
