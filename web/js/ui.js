@@ -215,6 +215,31 @@ function initHelpfulQueries() {
 	}
 }
 
+//toggle between <input> and <textarea> query forms
+function toggleTextArea(){
+	if (document.getElementById('query').tagName == 'INPUT') {
+		var inputfield = document.getElementById('query');
+		var textfield = document.createElement('textarea');
+		textfield.setAttribute('name', inputfield.getAttribute('name'));
+		textfield.setAttribute('id', inputfield.getAttribute('id'));
+		textfield.setAttribute('rows', '8');
+		textfield.value = inputfield.value;
+		inputfield.parentNode.replaceChild(textfield, inputfield);
+		setTabListener(textfield)
+	}
+	else if (document.getElementById('query').tagName == 'TEXTAREA') {
+		var textfield = document.getElementById('query');
+		var inputfield = document.createElement('input');
+		inputfield.setAttribute('name', textfield.getAttribute('name'));
+		inputfield.setAttribute('id', textfield.getAttribute('id'));
+		textfield.value = textfield.value.replaceAll(/\t+|\n+/g,' ');
+		textfield.value = textfield.value.replaceAll(/  +/g, ' ');
+		inputfield.value = textfield.value;
+		textfield.parentNode.replaceChild(inputfield, textfield);	
+		setEnterListener(inputfield)
+	}
+}
+
 function createcommunity(i) {
 	var commands = [
 		"CALL gds.graph.drop('networkgraph')",
@@ -234,6 +259,28 @@ function createcommunity(i) {
 	}
 }
 
+function setEnterListener(el) {
+	el.addEventListener("keyup", function(event) {
+		if (event.keyCode === 13) {
+			event.preventDefault();
+			document.getElementById("runquery").click();
+		}
+	});
+}
+
+//https://stackoverflow.com/questions/6637341/use-tab-to-indent-in-textarea
+function setTabListener(el) {
+	el.addEventListener('keydown', function(e) {
+		if (e.key == 'Tab') {
+			e.preventDefault();
+			var start = this.selectionStart;
+			var end = this.selectionEnd;
+			this.value = this.value.substring(0, start) + "\t" + this.value.substring(end);
+			this.selectionStart = this.selectionEnd = start + 1;
+		}
+	});
+}
+
 function customStartup() {
 	var inp1 = document.getElementById("password");
 	inp1.addEventListener("keyup", function(event) {
@@ -242,15 +289,10 @@ function customStartup() {
 			document.getElementById("submitconfig").click();
 		}
 	});
-	
-	var inp2 = document.getElementById("query");
-	inp2.addEventListener("keyup", function(event) {
-		if (event.keyCode === 13) {
-			event.preventDefault();
-			document.getElementById("runquery").click();
-		}
-	});
 
+	var inp2 = document.getElementById("query");
+	setEnterListener(inp2)
+	
 	var inp3 = document.getElementById("query");
 	manage_qhistory_init(inp3);
 	

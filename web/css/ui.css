@@ -10,6 +10,7 @@
 	left: 10px;
 	top: 10px;
 	z-index: 2;
+	background-color: rgba(255, 255, 255, 0.75);
 }
 #selected-floater {
 	position: absolute;
@@ -39,6 +40,7 @@
 }
 #query, #queryhistoryol, #error-message {
 	font-family: Courier;
+	font-size: 14px;
 }
 input, label {
 	vertical-align: middle;
@@ -49,6 +51,14 @@ label, #error-message, .error-close, #queryui div, #selected-info {
 .config-floater, .query-floater, #error-floater {
 	border: 1px solid lightgray;
 	padding: 2px;
+}
+#queryui div {
+	font-size: 14px;
+}
+#query-buttons {
+	display: inline;
+	position: fixed;
+	margin-left: 10px;
 }
 #queryhistory, #queryinfo {
 	display: none;
