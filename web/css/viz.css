@@ -4,8 +4,8 @@ html, body {
 }
     
 #viz {
-    width: 98vw;
-    height: 97vh;
+    width: calc(100% - 2px);
+    height: calc(100vh - 18px);
     border: 1px solid lightgray;
     font: 22pt arial;
 }

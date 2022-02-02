@@ -24,13 +24,43 @@ class Neo4j:
         except Exception as e:
             print(f'Exception:\t{type(e)}: {e}')
             print(f'Query:\t{query}')
-            print(f'Response:\tresp.json()')
+            print(f'Response:\t{resp.json()}')
             raise
 
     def nuke_all_data(self):
         query = 'MATCH (n) DETACH DELETE n'
         return self.execute_query(query)
+    
+    def create_node(self, label, name, properties=None):
+        if properties is None:
+            properties = {}
+        if name is None:
+            return
+        if 'name' not in properties:
+            properties['name'] = name
+        prop = '{'
+        for k in properties:
+            prop += f'{k}: '
+            if properties[k] is None or properties[k] == 'None':
+                # Cannot merge on null value, so do not include it at all
+                prop = prop.replace(f'{k}: ', '')
+            elif type(properties[k]) == str:
+                prop += f'"{properties[k]}", '
+            elif type(properties[k]) == int:
+                prop += f'{properties[k]}, '
+            elif type(properties[k]) == bool:
+                prop += f'{str(properties[k]).lower()}, '
+            else:
+                # Not sure what would fall into this else case
+                prop += f'"{properties[k]}", '
+        prop = prop[:-2] # cut off trailing ', '
+        prop += '}'
+        query = f'MERGE (n:{label} {prop}) RETURN id(n)'
+        return self.execute_query(query)
 
+    '''
+    Deprecated. Use create_node
+    '''
     def new_node(self, label, properties):
         query = f'MERGE (n:{label} {properties}) RETURN id(n)'
         return self.execute_query(query)
@@ -41,9 +71,10 @@ class Neo4j:
 
     def new_relationship(self, name_a, name_b, reltype, relprops=''):
         query = f'''MATCH
-    (a),
-    (b)
-WHERE a.name="{name_a}" AND b.name="{name_b}"
+    (a {{name: "{name_a}"}})
+WITH a
+MATCH
+    (b {{name: "{name_b}"}})
 MERGE (a)-[r:{reltype} {relprops}]->(b)
 RETURN type(r)'''.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         return self.execute_query(query)
