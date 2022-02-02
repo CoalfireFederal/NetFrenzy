@@ -128,7 +128,7 @@ class Wireshark:
     def print_cache_stats(self):
         if not self.debug_cache:
             return
-        keys = ['IP', 'MAC', 'ASSIGN', 'SSID', 'ADVERTISES']
+        keys = ['IP', 'MAC', 'ASSIGN', 'SSID', 'ADVERTISE']
         print(f'cache_max: {self.cache_max}')
         for k in keys:
             print(f'cache[{k}]:')
