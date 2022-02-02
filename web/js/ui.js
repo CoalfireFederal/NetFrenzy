@@ -202,23 +202,25 @@ function initHelpfulQueries() {
 //toggle between <input> and <textarea> query forms
 function toggleTextArea(){
 	if (document.getElementById('query').tagName == 'INPUT') {
-		var input = document.getElementById('query');
-		var text = document.createElement('textarea');
-		text.setAttribute('name', input.getAttribute('name'));
-		text.setAttribute('id', input.getAttribute('id'));
-		text.setAttribute('rows', '8');
-		text.value = input.value;
-		input.parentNode.replaceChild(text, input);
-		setTabListener(text)
+		var inputfield = document.getElementById('query');
+		var textfield = document.createElement('textarea');
+		textfield.setAttribute('name', inputfield.getAttribute('name'));
+		textfield.setAttribute('id', inputfield.getAttribute('id'));
+		textfield.setAttribute('rows', '8');
+		textfield.value = inputfield.value;
+		inputfield.parentNode.replaceChild(textfield, inputfield);
+		setTabListener(textfield)
 	}
 	else if (document.getElementById('query').tagName == 'TEXTAREA') {
-		var text = document.getElementById('query');
-		var input = document.createElement('input');
-		input.setAttribute('name', text.getAttribute('name'));
-		input.setAttribute('id', text.getAttribute('id'));
-		input.value = text.value;
-		text.parentNode.replaceChild(input, text);
-		setEnterListener(input)
+		var textfield = document.getElementById('query');
+		var inputfield = document.createElement('input');
+		inputfield.setAttribute('name', textfield.getAttribute('name'));
+		inputfield.setAttribute('id', textfield.getAttribute('id'));
+		textfield.value = textfield.value.replaceAll(/\t+|\n+/g,' ');
+		textfield.value = textfield.value.replaceAll(/  +/g, ' ');
+		inputfield.value = textfield.value;
+		textfield.parentNode.replaceChild(inputfield, textfield);	
+		setEnterListener(inputfield)
 	}
 }
 
