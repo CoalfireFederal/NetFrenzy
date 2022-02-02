@@ -49,7 +49,7 @@ label, #error-message, .error-close {
 	font-size: 14px;
 }
 #query-buttons {
-    display: inline;
+	display: inline;
 	position: fixed;
 	margin-left: 10px;
 }
