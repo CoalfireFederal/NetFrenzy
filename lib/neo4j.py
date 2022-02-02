@@ -71,9 +71,10 @@ class Neo4j:
 
     def new_relationship(self, name_a, name_b, reltype, relprops=''):
         query = f'''MATCH
-    (a),
-    (b)
-WHERE a.name="{name_a}" AND b.name="{name_b}"
+    (a {{name: "{name_a}"}})
+WITH a
+MATCH
+    (b {{name: "{name_b}"}})
 MERGE (a)-[r:{reltype} {relprops}]->(b)
 RETURN type(r)'''.replace('\n', ' ').replace('    ', ' ').replace('  ', ' ')
         return self.execute_query(query)
