@@ -31,7 +31,9 @@ class Neo4j:
         query = 'MATCH (n) DETACH DELETE n'
         return self.execute_query(query)
     
-    def create_node(self, label, name, properties={}):
+    def create_node(self, label, name, properties=None):
+        if properties is None:
+            properties = {}
         if name is None:
             return
         if 'name' not in properties:
