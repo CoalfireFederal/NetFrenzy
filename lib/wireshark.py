@@ -171,12 +171,10 @@ class Wireshark:
             return
         if self.cached(ip, 'IP'):
             return
-        mc = multicast.ip_multicast(ip)
-        mcast = ''
-        if mc:
-            mcast = ', multicast: true'
+        properties = {}
+        properties['multicast'] = multicast.ip_multicast(ip)
         self.debug_time_start()
-        neo4j.new_node('IP', f'{{name: "{ip}"{mcast}}}')
+        neo4j.create_node('IP', ip, properties=properties)
         self.debug_time_end()
     
     def create_mac(self, neo4j, mac, oui=None):
@@ -184,14 +182,11 @@ class Wireshark:
             return
         if self.cached(mac, 'MAC'):
             return
-        man = ''
-        if oui not in (None, 'None'):
-            man = f', manufacturer: "{oui}"'
-        multi = ''
-        if multicast.mac_multicast(mac):
-            multi = ', multicast: "likely"'
+        properties = {}
+        properties['manufacturer'] = oui
+        properties['multicast'] = multicast.mac_multicast(mac)
         self.debug_time_start()
-        neo4j.new_node('MAC', f'{{name: "{mac}"{man}{multi}}}')
+        neo4j.create_node('MAC', mac, properties=properties)
         self.debug_time_end()
     
     def create_mac_assignment(self, neo4j, ip, mac):
@@ -258,15 +253,18 @@ class Wireshark:
         self.debug_time_end()
 
     def create_ssid(self, neo4j, ssid, mac_src):
-        if ssid is not None:
-            if not self.cached(ssid, 'SSID'):
-                self.debug_time_start()
-                neo4j.new_node('SSID', f'{{name: "{ssid}"}}')
-                self.debug_time_end()
-            if not self.cached([mac_src, ssid], 'ADVERTISE'):
-                self.debug_time_start()
-                neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
-                self.debug_time_end()
+        if ssid is None:
+            return
+        if not self.cached(ssid, 'SSID'):
+            self.debug_time_start()
+            neo4j.create_node('SSID', ssid)
+            self.debug_time_end()
+        if mac_src is None:
+            return
+        if not self.cached([mac_src, ssid], 'ADVERTISE'):
+            self.debug_time_start()
+            neo4j.new_relationship(mac_src, ssid, 'ADVERTISES')
+            self.debug_time_end()
 
 def get_protocol(packet):
     for layer in packet.layers:
