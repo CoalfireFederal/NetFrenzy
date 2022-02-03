@@ -216,8 +216,9 @@ function initHelpfulQueries() {
 }
 
 //toggle between <input> and <textarea> query forms
-function toggleTextArea(){
-	if (document.getElementById('query').tagName == 'INPUT') {
+function toggleInputMode(){
+	inputmode = document.getElementById('query').tagName;
+	if (inputmode == 'INPUT') {
 		var inputfield = document.getElementById('query');
 		var textfield = document.createElement('textarea');
 		textfield.setAttribute('name', inputfield.getAttribute('name'));
@@ -226,8 +227,9 @@ function toggleTextArea(){
 		textfield.value = inputfield.value;
 		inputfield.parentNode.replaceChild(textfield, inputfield);
 		setTabListener(textfield)
+		setUpDownListeners(textfield)
 	}
-	else if (document.getElementById('query').tagName == 'TEXTAREA') {
+	else if (inputmode == 'TEXTAREA') {
 		var textfield = document.getElementById('query');
 		var inputfield = document.createElement('input');
 		inputfield.setAttribute('name', textfield.getAttribute('name'));
@@ -237,6 +239,7 @@ function toggleTextArea(){
 		inputfield.value = textfield.value;
 		textfield.parentNode.replaceChild(inputfield, textfield);	
 		setEnterListener(inputfield)
+		setUpDownListeners(inputfield)
 	}
 }
 
@@ -281,22 +284,8 @@ function setTabListener(el) {
 	});
 }
 
-function customStartup() {
-	var inp1 = document.getElementById("password");
-	inp1.addEventListener("keyup", function(event) {
-		if (event.keyCode === 13) {
-			event.preventDefault();
-			document.getElementById("submitconfig").click();
-		}
-	});
-
-	var inp2 = document.getElementById("query");
-	setEnterListener(inp2)
-	
-	var inp3 = document.getElementById("query");
-	manage_qhistory_init(inp3);
-	
-	inp2.addEventListener("keyup", function(event) {
+function setUpDownListeners(el) {
+	el.addEventListener("keyup", function(event) {
 		if (event.keyCode === 38) { // Up arrow
 			event.preventDefault();
 			if (query_history_pos == 0 && query_history.length > 0) {
@@ -319,6 +308,24 @@ function customStartup() {
 			this.value = query_history[query_history_pos];
 		}
 	});
+}
+
+function customStartup() {
+	var inp1 = document.getElementById("password");
+	inp1.addEventListener("keyup", function(event) {
+		if (event.keyCode === 13) {
+			event.preventDefault();
+			document.getElementById("submitconfig").click();
+		}
+	});
+
+	var inp2 = document.getElementById("query");
+	setEnterListener(inp2)
+	
+	var inp3 = document.getElementById("query");
+	manage_qhistory_init(inp3);
+	
+	setUpDownListeners(inp2)
 	
 	initHelpfulQueries();
 }
