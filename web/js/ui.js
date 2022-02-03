@@ -227,7 +227,6 @@ function toggleInputMode(){
 		textfield.value = inputfield.value;
 		inputfield.parentNode.replaceChild(textfield, inputfield);
 		setTabListener(textfield)
-		setUpDownListeners(textfield)
 	}
 	else if (inputmode == 'TEXTAREA') {
 		var textfield = document.getElementById('query');
