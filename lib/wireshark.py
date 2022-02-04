@@ -22,6 +22,169 @@ class Wireshark:
         self.cache = {}
         self.cache_max = 0
         self.cache_init()
+        self.preprocess = False
+
+    def ingest(self, neo4j):
+        if self.preprocess:
+            self.preprocess_to_neo4j(neo4j)
+        else:
+            self.upload_to_neo4j(neo4j)
+
+    def preprocess_to_neo4j(self, neo4j):
+        nodes = {'IP': [], 'MAC': [], 'SSID': []}
+        edges = {'CONNECTED': [], 'ASSIGNED': [], 'ADVERTISES': []}
+        
+        # Count packets for process bar
+        if self.do_count and self.count is None:
+            print('Counting packets in pcap. Takes approx 1ms/packet')
+            self.count = 0
+            for c in self.cap:
+                self.count += 1
+
+        cap_iter = None
+        if self.do_count or self.count:
+            cap_iter = tqdm.tqdm(self.cap, total=self.count)
+        else:
+            cap_iter = tqdm.tqdm(self.cap)
+        
+        for packet in cap_iter:
+            proto = get_protocol(packet)
+            time = get_time(packet)
+            length = get_length(packet)
+            macs = get_macs(packet, cached=self.is_cached)
+            ip_src, ip_dst = get_ips(packet)
+            port_src, port_dst = get_ports(packet)
+            service, service_layer = get_service(packet)
+            ssid = get_ssid(packet)
+            
+            # Is MERGE on a Python array faster than a MERGE in Neo4j?
+            # IP nodes and MAC nodes and (:IP)-[:CONNECTED]-(:IP) and (:IP)-[:ASSIGNED]-(:MAC)
+            if None not in [ip_src, ip_dst]:
+                # IP nodes
+                node = {'name': ip_src, 'multicast': multicast.ip_multicast(ip_src)}
+                if node not in nodes['IP']:
+                    nodes['IP'].append(node)
+                node = {'name': ip_dst, 'multicast': multicast.ip_multicast(ip_dst)}
+                if node not in nodes['IP']:
+                    nodes['IP'].append(node)
+                
+                # MAC nodes
+                for k, mac in macs.items():
+                    if mac['mac'] is not None:
+                        node = {'name': mac['mac'], 'manufacturer': mac['oui'], 'multicast': multicast.mac_multicast(mac['mac'])}
+                        if node not in nodes['MAC']:
+                            nodes['MAC'].append(node)
+
+                # (:IP)-[:CONNECTED]-(:IP)
+                found_edge = None
+                for edge in edges['CONNECTED']:
+                    if match_IP_edge(edge, ip_src, ip_dst, proto, port_dst):
+                        found_edge = edge
+                if found_edge:
+                    found_edge['properties']['data'] += length
+                    if found_edge['properties']['first_seen'] > time:
+                        found_edge['properties']['first_seen'] = time
+                    if found_edge['properties']['last_seen'] < time:
+                        found_edge['properties']['last_seen'] = time
+                    if found_edge['properties']['service_layer'] < service_layer:
+                        found_edge['properties']['service'] = service
+                else:
+                    found_edge = create_IP_edge(ip_src, ip_dst, proto, port_dst, time, length, service, service_layer)
+                    edges['CONNECTED'].append(found_edge)
+                
+                # (:IP)-[:ASSIGNED]-(:MAC)
+                edge = {'mac': macs['src']['mac'], 'ip': ip_src} 
+                if edge not in edges['ASSIGNED']:
+                    edges['ASSIGNED'].append(edge)
+                edge = {'mac': macs['src']['mac'], 'ip': ip_dst} 
+                if edge not in edges['ASSIGNED']:
+                    edges['ASSIGNED'].append(edge)
+
+            # (:MAC)-[:CONNECTED]-(:MAC)
+            elif None not in (macs['src']['mac'], macs['dst']['mac'], macs['tra']['mac'], macs['rec']['mac']):
+                # This is for wlan frames that have ra and ta
+                # We are connecting the sender to transmitter, receiver to destination
+
+                # self.create_connection_mac(neo4j, macs['src']['mac'], macs['tra']['mac'], proto, time, length, service, service_layer)
+                found_edge = None
+                for edge in edges['CONNECTED']:
+                    if match_MAC_edge(edge, macs['src']['mac'], macs['tra']['mac'], proto):
+                        found_edge = edge
+                if found_edge:
+                    found_edge['properties']['data'] += length
+                    if found_edge['properties']['first_seen'] > time:
+                        found_edge['properties']['first_seen'] = time
+                    if found_edge['properties']['last_seen'] < time:
+                        found_edge['properties']['last_seen'] = time
+                    if found_edge['properties']['service_layer'] < service_layer:
+                        found_edge['properties']['service'] = service
+                else:
+                    found_edge = create_MAC_edge(macs['src']['mac'], macs['tra']['mac'], proto, time, length, service, service_layer)
+                    edges['CONNECTED'].append(found_edge)
+                
+                # self.create_connection_mac(neo4j, macs['rec']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+                found_edge = None
+                for edge in edges['CONNECTED']:
+                    if match_edge(edge, macs['rec']['mac'], macs['dst']['mac'], proto):
+                        found_edge = edge
+                if found_edge:
+                    found_edge['properties']['data'] += length
+                    if found_edge['properties']['first_seen'] > time:
+                        found_edge['properties']['first_seen'] = time
+                    if found_edge['properties']['last_seen'] < time:
+                        found_edge['properties']['last_seen'] = time
+                    if found_edge['properties']['service_layer'] < service_layer:
+                        found_edge['properties']['service'] = service
+                else:
+                    found_edge = create_MAC_edge(macs['rec']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+                    edges['CONNECTED'].append(found_edge)
+
+            # (:MAC)-[:CONNECTED]-(:MAC)
+            elif None not in (macs['src']['mac'], macs['dst']['mac']):
+                # (:MAC)-[:CONNECTED]-(:MAC)
+                found_edge = None
+                for edge in edges['CONNECTED']:
+                    if match_MAC_edge(edge, macs['src']['mac'], macs['dst']['mac'], proto):
+                        found_edge = edge
+                if found_edge:
+                    found_edge['properties']['data'] += length
+                    if found_edge['properties']['first_seen'] > time:
+                        found_edge['properties']['first_seen'] = time
+                    if found_edge['properties']['last_seen'] < time:
+                        found_edge['properties']['last_seen'] = time
+                    if found_edge['properties']['service_layer'] < service_layer:
+                        found_edge['properties']['service'] = service
+                else:
+                    found_edge = create_MAC_edge(macs['src']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+                    edges['CONNECTED'].append(found_edge)
+
+            # SSID nodes and (:MAC)-[:ADVERTISES]-(:SSID)
+            if ssid is not None:
+                # SSID nodes
+                edge = {'name': ssid}
+                if edge not in nodes['SSID']:
+                    nodes['SSID'].append(edge)
+                
+                # (:MAC)-[:ADVERTISES]-(:SSID)
+                edge = {'src': macs['src']['mac'], 'dst': ssid, 'properties': []} 
+                if edge not in edges['ADVERTISES']:
+                    edges['ADVERTISES'].append(edge)
+
+        # This code is after the packet loop
+
+        # nodes = {'IP': [], 'MAC': [], 'SSID': []}
+        # edges = {'CONNECTED': [], 'ASSIGNED': [], 'ADVERTISES': []}
+
+        # Create all nodes in Neo4j
+        for k, v in nodes.items():
+            print(f'Debug: {k} length: {len(v)}')
+            for node in v:
+                neo4j.create_node(k, '', properties=node)
+
+        for k, v in edges.items():
+            print(f'Debug: {k} length: {len(v)}')
+            for edge in v:
+                neo4j.create_relationship(k, edge['src'], edge['dst'], properties=edge['properties'])
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -405,3 +568,56 @@ def get_ssid(packet):
     if ssid is not None and ssid in ignore:
         ssid = None
     return ssid
+
+def match_IP_edge(edge, ip_src, ip_dst, proto, port_dst):
+    if ip_src != edge['src']:
+        return False
+    if ip_dst != edge['dst']:
+        return False
+    if proto != edge['properties']['proto']:
+        return False
+    if port_dst != edge['properties']['port']:
+        return False
+    return True
+                    
+def create_IP_edge(ip_src, ip_dst, proto, port_dst, time, length, service, service_layer):
+    edge = {
+        'src': ip_src,
+        'dst': ip_dst,
+        'properties': {
+            'name': f'{port_dst}/{proto}',
+            'proto': proto,
+            'port': port_dst,
+            'first_seen': time,
+            'last_seen': time,
+            'data': length,
+            'service': service,
+            'service_layer': service_layer,
+        }
+    }
+    return edge
+
+def match_MAC_edge(edge, mac_src, mac_dst, proto):
+    if mac_src != edge['src']:
+        return False
+    if mac_dst != edge['dst']:
+        return False
+    if proto != edge['properties']['proto']:
+        return False
+    return True
+
+def create_MAC_edge(mac_src, mac_dst, proto, time, length, service, service_layer):
+    edge = {
+        'src': mac_src,
+        'dst': mac_dst,
+        'properties': {
+            'name': service,
+            'proto': proto,
+            'first_seen': time,
+            'last_seen': time,
+            'data': length,
+            'service': service,
+            'service_layer': service_layer,
+        }
+    }
+    return edge

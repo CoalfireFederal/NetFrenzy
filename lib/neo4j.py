@@ -58,6 +58,31 @@ class Neo4j:
         query = f'MERGE (n:{label} {prop}) RETURN id(n)'
         return self.execute_query(query)
 
+    def create_relationship(self, label, name1, name2, properties=None):
+        if properties is None:
+            properties = {}
+        if None in [name1, name2]:
+            return
+        prop = '{'
+        for k in properties:
+            prop += f'{k}: '
+            if properties[k] is None or properties[k] == 'None':
+                # Cannot merge on null value, so do not include it at all
+                prop = prop.replace(f'{k}: ', '')
+            elif type(properties[k]) == str:
+                prop += f'"{properties[k]}", '
+            elif type(properties[k]) == int:
+                prop += f'{properties[k]}, '
+            elif type(properties[k]) == bool:
+                prop += f'{str(properties[k]).lower()}, '
+            else:
+                # Not sure what would fall into this else case
+                prop += f'"{properties[k]}", '
+        prop = prop[:-2] # cut off trailing ', '
+        prop += '}'
+        query = f'MERGE (n {{name: "{name1}"}})-[r:{label} {prop}]->(m {{name: "{name2}"}}) RETURN type(r)'
+        return self.execute_query(query)
+
     '''
     Deprecated. Use create_node
     '''

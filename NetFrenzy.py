@@ -10,6 +10,7 @@ def parse_args():
   parser.add_argument('-c', '--config', type=str, help='Config json file', default='ws4j.json')
   parser.add_argument('-p', '--pcap', type=str, help='Path to pcap file')
   parser.add_argument('-i', '--ignore', type=str, help='MAC address to ignore (like the GW which would correspond to all other IPs)')
+  parser.add_argument('--preprocess', action='store_true', help='Bet on Python data structures being faster than Neo4j', default=False)
   parser.add_argument('-d', '--debug', action='store_true', help='Use pdb to debug Neo4j responses')
   parser.add_argument('-da', '--debug-at', type=int, help='Use pdb to debug Neo4j responses at a specific iteration')
   parser.add_argument('--debug-time', action='store_true', help='Enable Neo4j time performance tracking')
@@ -52,9 +53,10 @@ def main():
 
     if args.debug_cache:
         ws.debug_cache = args.debug_cache
+    ws.preprocess = args.preprocess
     ws.cache_max = args.cache_max
 
-    ws.upload_to_neo4j(n4j)
+    ws.ingest(n4j)
 
 if __name__=='__main__':
     try:
