@@ -25,7 +25,7 @@ Install Neo4j with the instructions [here](https://www.digitalocean.com/communit
 ## Run
 
 ```bash
-python3 NetFrenzy.py -p ../path/to/your.pcap -c ws4j.json -nc
+python3 NetFrenzy.py -p ../path/to/your.pcap -c config.json -nc
 ```
 
 Processes approx. 45-55 packets per second into Neo4j.
