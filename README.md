@@ -1,19 +1,6 @@
 # NetFrenzy
 Import a pcap file into Neo4j and view the network graph
 
-# Contributing
-
-Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch.
-
-Please check out the [Good First Issues](https://github.com/CoalfireFederal/NetFrenzy/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Assign yourself to the issue to let me know you're working on it.
-
-If you have an old version of this repository, you can update your remote origin by:
-```
-git remote rename origin old
-git remote add origin git@github.com:CoalfireFederal/NetFrenzy.git # If you use your SSH key to authenticate to GitHub
-git remote add origin https://github.com/CoalfireFederal/NetFrenzy.git # If you use an access token to authenticate to GitHub
-```
-
 # Usage
 
 ## Setup
@@ -88,3 +75,12 @@ Clear out all objects in database (start over)
 ```
 MATCH (n) DETACH DELETE n
 ```
+
+# Contributing
+
+Please check out the [Good First Issues](https://github.com/CoalfireFederal/NetFrenzy/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22). Feel free to contribute user stories to explain how new functionality could improve NetFrenzy. Issues with Help Wanted are requesting input from the community on implementation details and general usability.
+
+**For CoalfireFederal organization members:**
+
+Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch. Assign yourself to an issue to let me know you're working on it.
+
