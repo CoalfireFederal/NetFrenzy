@@ -1,7 +1,7 @@
 import sys
 import argparse
 
-import lib.wireshark as wireshark
+import lib.pcap as pcap
 import lib.neo4j as neo4j
 import lib.connection as connection
 
@@ -32,7 +32,7 @@ def main():
     print(f'Filename: {args.pcap}')
     print(f'Config: {args.config}')
 
-    ws = wireshark.Wireshark(args.pcap)
+    pc = pcap.Pcap(args.pcap)
     n4j = neo4j.Neo4j()
     conn = connection.Connection(config=args.config)
     conn.init_config()
@@ -40,21 +40,21 @@ def main():
     if args.debug:
         n4j.debug = True
     if 'ignore' in args:
-        ws.ignore.append(args.ignore)
+        pc.ignore.append(args.ignore)
     if args.no_count:
-        ws.do_count = False
+        pc.do_count = False
     if args.count:
-        ws.count = args.count
+        pc.count = args.count
     if args.debug_at:
-        ws.debug_at = args.debug_at
+        pc.debug_at = args.debug_at
     if args.debug_time:
-        ws.debug_time = args.debug_time
+        pc.debug_time = args.debug_time
 
     if args.debug_cache:
-        ws.debug_cache = args.debug_cache
-    ws.cache_max = args.cache_max
+        pc.debug_cache = args.debug_cache
+    pc.cache_max = args.cache_max
 
-    ws.upload_to_neo4j(n4j)
+    pc.upload_to_neo4j(n4j)
 
 if __name__=='__main__':
     try:

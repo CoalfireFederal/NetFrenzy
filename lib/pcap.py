@@ -7,7 +7,7 @@ from OuiLookup import OuiLookup
 
 from . import multicast
 
-class Wireshark:
+class Pcap:
     def __init__(self, pcap_filename, keep_packets=False):
         self.filename = pcap_filename
         self.cap = pyshark.FileCapture(self.filename, keep_packets=keep_packets)
