@@ -59,6 +59,19 @@ label, #error-message, .error-close, #queryui div, #selected-info {
 	display: inline;
 	position: fixed;
 	margin-left: 10px;
+	height: 18pt;
+}
+.query-button {
+	height: 100%;
+	width: 32px; 
+	position: relative;
+}
+.query-button-icon {
+	margin: 0;
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
 }
 #queryhistory, #queryinfo {
 	display: none;
