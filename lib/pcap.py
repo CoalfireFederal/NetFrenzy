@@ -201,7 +201,7 @@ class Pcap:
         if self.reduce:
             self.create_connection_ip_reduced(neo4j, ip_src, ip_dst, port_dst, proto)
         else:
-            selfcreate_connection_ip_full(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+            self.create_connection_ip_full(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
 
     def create_connection_ip_full(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
         if port_dst is None:
