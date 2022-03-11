@@ -22,6 +22,7 @@ class Pcap:
         self.cache = {}
         self.cache_max = 0
         self.cache_init()
+        self.reduce = False
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -43,13 +44,15 @@ class Pcap:
                 neo4j.debug = False
 
             proto = get_protocol(packet)
-            time = get_time(packet)
-            length = get_length(packet)
             macs = get_macs(packet, cached=self.is_cached)
             ip_src, ip_dst = get_ips(packet)
             port_src, port_dst = get_ports(packet)
-            service, service_layer = get_service(packet)
             ssid = get_ssid(packet)
+            time, length, service, service_layer = None, None, None, None
+            if not self.reduce:
+                time = get_time(packet)
+                length = get_length(packet)
+                service, service_layer = get_service(packet)
 
             # Create/merge nodes for the IP addresses
             self.create_ip(neo4j, ip_src)
@@ -65,7 +68,7 @@ class Pcap:
             # Create or update the connection relationship for the packet
             if None not in (ip_src, ip_dst):
                 # Create a connection between IP addresses
-                self.create_connection(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+                self.create_connection_ip(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
             elif None not in (macs['src']['mac'], macs['dst']['mac']):
                 # Create a connection between MAC addresses
                 self.create_connection_mac(neo4j, macs['src']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
@@ -157,21 +160,6 @@ class Pcap:
         else:
             self.cache[_type]['misses'] += 1
         return cached
-    
-    '''
-    Deprecated, creates too many edges which probably aren't useful anyway
-    '''
-    def create_port_relationship(self, neo4j, ip_src, ip_dst, port_src, port_dst, proto, time, length):
-        props = '{'
-        props += f'srcport: {port_src}, '
-        props += f'dstport: {port_dst}, '
-        props += f'protocol: "{proto}", '
-        props += f'time: {time}, '
-        props += f'length: {length}'
-        props += '}'
-        self.debug_time_start()
-        neo4j.new_relationship(ip_src, ip_dst, 'CONNECTED', relprops=props)
-        self.debug_time_end()
 
     def create_ip(self, neo4j, ip):
         if ip is None:
@@ -209,7 +197,13 @@ class Pcap:
             neo4j.new_relationship(ip, mac, 'ASSIGNED')
             self.debug_time_end()
     
-    def create_connection(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
+    def create_connection_ip(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
+        if self.reduce:
+            self.create_connection_ip_reduced(neo4j, ip_src, ip_dst, port_dst, proto)
+        else:
+            self.create_connection_ip_full(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+
+    def create_connection_ip_full(self, neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer):
         if port_dst is None:
             port_dst = -1
     
@@ -238,7 +232,26 @@ class Pcap:
         neo4j.raw_query(query)
         self.debug_time_end()
     
+    def create_connection_ip_reduced(self, neo4j, ip_src, ip_dst, port_dst, proto):
+        if port_dst is None:
+            port_dst = -1
+    
+        # Create CONNECTED relationship between IPs
+        query = f'''MATCH (n:IP {{name: "{ip_src}"}})
+    MATCH (m:IP {{name: "{ip_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{port_dst}/{proto}", port: {port_dst}, protocol: "{proto}"}}]->(m)
+    return r'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+    
     def create_connection_mac(self, neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
+        if self.reduce:
+            self.create_connection_mac_reduced(neo4j, mac_src, mac_dst, proto)
+        else:
+            self.create_connection_mac_full(neo4j, mac_src, mac_dst, proto, time, length, service, service_layer)
+    
+    def create_connection_mac_full(self, neo4j, mac_src, mac_dst, proto, time, length, service, service_layer):
         # Create CONNECTED relationship between MACs
         query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
     MATCH (m:MAC {{name: "{mac_dst}"}})
@@ -260,6 +273,16 @@ class Pcap:
         SET r.service = (CASE WHEN {service_layer} > r.service_layer THEN "{service}" ELSE r.service END)
         SET r.service_layer = (CASE WHEN {service_layer} > r.service_layer THEN "{service_layer}" ELSE r.service_layer END)
     return r.service'''
+        self.debug_time_start()
+        neo4j.raw_query(query)
+        self.debug_time_end()
+
+    def create_connection_mac_reduced(self, neo4j, mac_src, mac_dst, proto):
+        # Create CONNECTED relationship between MACs
+        query = f'''MATCH (n:MAC {{name: "{mac_src}"}})
+    MATCH (m:MAC {{name: "{mac_dst}"}})
+    MERGE (n)-[r:CONNECTED {{name: "{proto}", protocol: "{proto}"}}]->(m)
+    return r'''
         self.debug_time_start()
         neo4j.raw_query(query)
         self.debug_time_end()
