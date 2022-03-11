@@ -40,7 +40,7 @@
 }
 #query, #queryhistoryol, #error-message {
 	font-family: Courier;
-	font-size: 18px;
+	font-size: 14px;
 }
 input, label {
 	vertical-align: middle;
@@ -84,4 +84,11 @@ pre {
 }
 .error-close {
 	float: right;
+}
+
+input[type=text] {
+	font-size: 14px;
+	height: 16px;
+	line-height: 13px;
+	padding-top: 3px;
 }
