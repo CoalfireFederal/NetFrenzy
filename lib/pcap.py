@@ -8,9 +8,13 @@ from OuiLookup import OuiLookup
 from . import multicast
 
 class Pcap:
-    def __init__(self, pcap_filename, keep_packets=False):
+    def __init__(self, pcap_filename, interface, keep_packets=False):
         self.filename = pcap_filename
-        self.cap = pyshark.FileCapture(self.filename, keep_packets=keep_packets)
+        self.interface = interface
+        if self.filename:
+            self.cap = pyshark.FileCapture(self.filename, keep_packets=keep_packets)
+        elif self.interface:
+            self.cap = pyshark.LiveCapture(interface=self.interface)
         self.ignore = []
         self.count = None
         self.do_count = True
@@ -23,6 +27,12 @@ class Pcap:
         self.cache_max = 0
         self.cache_init()
         self.reduce = False
+
+    def start_process(self, neo4j):
+        if self.filename:
+            self.upload_to_neo4j(neo4j)
+        elif self.interface:
+            self.begin_capture(neo4j)
 
     def upload_to_neo4j(self, neo4j):
         if self.do_count and self.count is None:
@@ -42,48 +52,58 @@ class Pcap:
                 neo4j.debug = True
             elif debug_count > 0 and debug_count != self.debug_at:
                 neo4j.debug = False
-
-            proto = get_protocol(packet)
-            macs = get_macs(packet, cached=self.is_cached)
-            ip_src, ip_dst = get_ips(packet)
-            port_src, port_dst = get_ports(packet)
-            ssid = get_ssid(packet)
-            time, length, service, service_layer = None, None, None, None
-            if not self.reduce:
-                time = get_time(packet)
-                length = get_length(packet)
-                service, service_layer = get_service(packet)
-
-            # Create/merge nodes for the IP addresses
-            self.create_ip(neo4j, ip_src)
-            self.create_ip(neo4j, ip_dst)
-
-            # Create/merge nodes for the MAC addresses
-            self.create_macs(neo4j, macs)
-
-            # Assign the IP addresses to the MAC addresses
-            self.create_mac_assignment(neo4j, ip_src, macs['src']['mac'])
-            self.create_mac_assignment(neo4j, ip_dst, macs['dst']['mac'])
-
-            # Create or update the connection relationship for the packet
-            if None not in (ip_src, ip_dst):
-                # Create a connection between IP addresses
-                self.create_connection_ip(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
-            elif None not in (macs['src']['mac'], macs['dst']['mac']):
-                # Create a connection between MAC addresses
-                self.create_connection_mac(neo4j, macs['src']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
-            if None not in (macs['src']['mac'], macs['dst']['mac'], macs['tra']['mac'], macs['rec']['mac']):
-                # Create a connection between MAC addresses
-                # This is for wlan frames that have ra and ta
-                # We are connecting the sender to transmitter, receiver to destination
-                self.create_connection_mac(neo4j, macs['src']['mac'], macs['tra']['mac'], proto, time, length, service, service_layer)
-                self.create_connection_mac(neo4j, macs['rec']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
-
-            self.create_ssid(neo4j, ssid, macs['src']['mac'])
-
+            self.process(neo4j, packet)
             debug_count += 1
+
         self.print_debug_time()
         self.print_cache_stats()
+
+    def begin_capture(self, neo4j):
+        if not self.reduce:
+            self.reduce = True
+            print('Enabling --reduce to ensure NetFrenzy keeps up with live capture')
+
+        for packet in self.cap.sniff_continuously():
+            self.process(neo4j, packet)
+
+    def process(self, neo4j, packet):
+        proto = get_protocol(packet)
+        macs = get_macs(packet, cached=self.is_cached)
+        ip_src, ip_dst = get_ips(packet)
+        port_src, port_dst = get_ports(packet)
+        ssid = get_ssid(packet)
+        time, length, service, service_layer = None, None, None, None
+        if not self.reduce:
+            time = get_time(packet)
+            length = get_length(packet)
+            service, service_layer = get_service(packet)
+
+        # Create/merge nodes for the IP addresses
+        self.create_ip(neo4j, ip_src)
+        self.create_ip(neo4j, ip_dst)
+
+        # Create/merge nodes for the MAC addresses
+        self.create_macs(neo4j, macs)
+
+        # Assign the IP addresses to the MAC addresses
+        self.create_mac_assignment(neo4j, ip_src, macs['src']['mac'])
+        self.create_mac_assignment(neo4j, ip_dst, macs['dst']['mac'])
+
+        # Create or update the connection relationship for the packet
+        if None not in (ip_src, ip_dst):
+            # Create a connection between IP addresses
+            self.create_connection_ip(neo4j, ip_src, ip_dst, port_dst, proto, time, length, service, service_layer)
+        elif None not in (macs['src']['mac'], macs['dst']['mac']):
+            # Create a connection between MAC addresses
+            self.create_connection_mac(neo4j, macs['src']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+        if None not in (macs['src']['mac'], macs['dst']['mac'], macs['tra']['mac'], macs['rec']['mac']):
+            # Create a connection between MAC addresses
+            # This is for wlan frames that have ra and ta
+            # We are connecting the sender to transmitter, receiver to destination
+            self.create_connection_mac(neo4j, macs['src']['mac'], macs['tra']['mac'], proto, time, length, service, service_layer)
+            self.create_connection_mac(neo4j, macs['rec']['mac'], macs['dst']['mac'], proto, time, length, service, service_layer)
+
+        self.create_ssid(neo4j, ssid, macs['src']['mac'])
 
     def debug_time_start(self):
         if self.debug_time:

@@ -9,6 +9,7 @@ def parse_args():
   parser = argparse.ArgumentParser(description='Import a pcap into Neo4j')
   parser.add_argument('-c', '--config', type=str, help='Config json file', default='config.json')
   parser.add_argument('-p', '--pcap', type=str, help='Path to pcap file')
+  parser.add_argument('-l', '--live', type=str, help='Capture live on specified interface')
   parser.add_argument('-i', '--ignore', type=str, help='MAC address to ignore (like the GW which would correspond to all other IPs)')
   parser.add_argument('-d', '--debug', action='store_true', help='Use pdb to debug Neo4j responses')
   parser.add_argument('-da', '--debug-at', type=int, help='Use pdb to debug Neo4j responses at a specific iteration')
@@ -27,13 +28,16 @@ def parse_args():
 def main():
     args = parse_args()
 
-    if not args.pcap:
+    if not args.pcap and not args.live:
         print(f'try --help')
         return
-    print(f'Filename: {args.pcap}')
+    if args.pcap:
+        print(f'Filename: {args.pcap}')
+    if args.live:
+        print(f'Interface: {args.live}')
     print(f'Config: {args.config}')
 
-    pc = pcap.Pcap(args.pcap)
+    pc = pcap.Pcap(args.pcap, args.live)
     n4j = neo4j.Neo4j()
     conn = connection.Connection(config=args.config)
     conn.init_config()
@@ -56,10 +60,12 @@ def main():
     pc.cache_max = args.cache_max
     pc.reduce = args.reduce
 
-    pc.upload_to_neo4j(n4j)
+    pc.start_process(n4j)
 
 if __name__=='__main__':
     try:
         main()
     except KeyboardInterrupt as e:
         print('Received Ctrl-C. Exiting')
+        if parse_args().live:
+            print('The error below is normal upon CTRL-C with live capture\n\n')
