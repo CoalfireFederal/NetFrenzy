@@ -11,11 +11,21 @@ Install Neo4j with the instructions [here](https://www.digitalocean.com/communit
 
 ## Run
 
+**Importing a pcap file**
 ```bash
-python3 NetFrenzy.py -p ../path/to/your.pcap -c config.json -nc
+python3 NetFrenzy.py -p ../path/to/your.pcap -nc
 ```
 
-Processes approx. 45-55 packets per second into Neo4j.
+Processes approx. 45-55 packets per second into Neo4j. Enable `--reduce` to increase speeds to 160-180 packets per second at the cost of less information stored about the connections.
+
+**Running a live capture**
+```bash
+python3 NetFrenzy.py --live eth0
+```
+
+Live captures enable `--reduce` automatically which increases performance to keep up with the live capture.
+
+**Recommended system specs**
 
 Neo4j can be run in the same VM as the ingestor or in a separate VM.
 
@@ -26,9 +36,11 @@ Recommended minimum VM specs:
 
 # Why
 
+The human eye is the ultimate sensor.
+
  - Visualize the network from a PCAP
  - Verify network segmentation
- - Identify CTF players attacking each other
+ - Easily identify anomalies
 
 # Demo
 
@@ -36,13 +48,10 @@ Recommended minimum VM specs:
 
 Found at `/web/NetFrenzy.html`, just open it in your browser
 
-I made this
-
- - Config and Query UI can be hidden with a toggle
- - Query bar has a history. Use up/down arrow. Clears upon page reload
- - Pause button halts the graph movement physics
- - i button toggles a list of helpful queries you can click on, modify, and run
- - h button toggles your history, also clickable
+ - UI elements can be toggled by clicking on their label
+ - Use up/down arrow or history button to access and replay queries
+ - Pause button halts the graph physics
+ - Built-in list of queries you may find helpful
 
 ![Preview](/screenshots/neovis-demo.png "Neovis.js client")
 
@@ -54,7 +63,7 @@ This will color nodes based on the clusters they form within the graph. This is 
 
 ## Setup
 
-Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper `neo4j:adm` ownership. If you have run `setup.sh`, this has already been done.
+Requires the Neo4j [Graph Data Science Library](https://neo4j.com/download-center/#algorithms) downloaded and moved to `/var/lib/neo4j/plugins/` with the proper user and group permissions. If you have run `setup.sh`, this has already been done.
 
 ## How to generate
 
@@ -82,5 +91,5 @@ Please check out the [Good First Issues](https://github.com/CoalfireFederal/NetF
 
 **For CoalfireFederal organization members:**
 
-Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch. Assign yourself to an issue to let me know you're working on it.
+Please make a new branch to make modifications, then submit a pull request rather than committing directly to the main branch. Your branch can be deleted once the pull request is merged. Assign yourself to an issue to let me know you're working on it.
 
