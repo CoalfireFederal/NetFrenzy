@@ -17,6 +17,7 @@ def parse_args():
   parser.add_argument('-nc', '--no-count', action='store_true', help='Disable count for progress bar')
   parser.add_argument('--cache-max', type=int, help='Max cache size for each of the cache types', default=50)
   parser.add_argument('--count', type=int, help='Number of packets in the pcap (optional)')
+  parser.add_argument('-r', '--reduce', action='store_true', help='Reduce information stored about connections')
   if len(sys.argv) == 1:
     parser.print_help()
     sys.exit(1)
@@ -53,6 +54,7 @@ def main():
     if args.debug_cache:
         pc.debug_cache = args.debug_cache
     pc.cache_max = args.cache_max
+    pc.reduce = args.reduce
 
     pc.upload_to_neo4j(n4j)
 
