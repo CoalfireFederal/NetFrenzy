@@ -84,11 +84,21 @@
 			<div id="queryui">
 				<input name="query" value="" type="text" id="query">
 				<div id="query-buttons">
-					<input type="submit" title="run query" id="runquery" value="▶" onclick="runQuery()">
-					<input type="submit" value="↕" title="toggle multiline" id="linetoggle" onclick="toggleInputMode()">
-					<input type="submit" value="⏸" title="stabilize graph" onclick="window.viz.stabilize()">
-					<input type="submit" value="𝒾" title="show info" onclick="toggleInfo()">
-					<input type="submit" value="𝒽" title="show history" onclick="toggleHistory()">
+					<button class="query-button" title="run query" id="runquery" onclick="runQuery()">
+						<img class="query-button-icon" src="icons/play-fill.svg">
+					</button>
+					<button class="query-button" title="stabilize graph" onclick="window.viz.stabilize()">
+						<img class="query-button-icon" src="icons/pause-fill.svg">
+					</button>
+					<button class="query-button" title="toggle multiline" id="linetoggle" onclick="toggleInputMode()">
+						<img class="query-button-icon" src="icons/chevron-bar-expand.svg">
+					</button>
+					<button class="query-button" title="show info" onclick="toggleInfo()">
+						<img class="query-button-icon" src="icons/info-circle.svg">
+					</button>
+					<button class="query-button" title="show history" onclick="toggleHistory()">
+						<img class="query-button-icon" src="icons/clock-history.svg">
+					</button>
 				</div>
 				<div id="queryhistory">
 					<p>History</p>
