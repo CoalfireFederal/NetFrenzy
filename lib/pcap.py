@@ -284,7 +284,7 @@ def get_protocol(packet):
             return 'udp'
         elif layer.layer_name == 'tcp':
             return 'tcp'
-    if 'ip' in packet:
+    if 'ip' in packet or 'ipv6' in packet:
         # eth -> ip -> ???
         return packet.layers[2].layer_name
     else:
@@ -342,7 +342,7 @@ def get_macs_old(packet):
 
 def get_ips(packet):
     for layer in packet.layers:
-        if layer.layer_name == 'ip':
+        if layer.layer_name in ('ip', 'ipv6'):
             return layer.src, layer.dst
     return None, None
 
