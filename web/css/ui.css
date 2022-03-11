@@ -63,7 +63,7 @@ label, #error-message, .error-close, #queryui div, #selected-info {
 }
 .query-button {
 	height: 100%;
-	width: 32px; 
+	width: 24px; 
 	position: relative;
 }
 .query-button-icon {
